@@ -1,0 +1,11 @@
+<project name="ChessTournamentManagementSystem" default="default" basedir=".">
+    <description>Builds, tests, and runs the project ChessTournamentManagementSystem.</description>
+    
+    <target name="-pre-init">
+        <pathconvert property="javac.classpath" pathsep=";">
+            <fileset dir="lib" includes="*.jar"/>
+        </pathconvert>
+    </target>
+
+    <import file="nbproject/build-impl.xml"/>
+</project>
