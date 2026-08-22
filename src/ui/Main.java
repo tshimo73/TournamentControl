@@ -4,13 +4,15 @@ package ui;
 
 import jframeconfig.Config;
 import ui.tabbedPanels.*;
+import database.DatabaseManager;
 
 public class Main extends javax.swing.JFrame {
     Config cf = new Config();
     
+    
     public Main() {
         initComponents();
-        
+        DatabaseManager.init();
         this.setSize(Config.FRAME_WIDTH, Config.FRAME_HEIGHT);
         this.setIconImage(cf.getIcon().getImage());
         this.setTitle(Config.PROJECT_NAME);
@@ -52,11 +54,11 @@ public class Main extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1)
+            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1184, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1)
+            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 569, Short.MAX_VALUE)
         );
 
         pack();

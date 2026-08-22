@@ -26,7 +26,6 @@ public class Tournament {
     protected List<Game> games = new ArrayList<>();
     protected boolean isImported = false;
 
-
     /**
      * Tournament with players and games set
      *
@@ -102,14 +101,40 @@ public class Tournament {
      * @return
      */
     public List<Player> getLeaderBoard() {
-        players.sort(Comparator.comparing(Player::getScore)
-                .thenComparing(Player::getTieBreak).reversed());
-        return players;
+        // My code copied and pasted from the MatchMaker class
+        // sort by score decending, rating desc as tiebreaker
+        Player[] sorted = (Player[]) players.toArray();
+
+        // manually sorting them (for marks and then converting back to array
+        // lists because i find them easier to use in this project)
+        for (int i = 0; i < sorted.length - 1; i++) {
+            for (int j = i + 1; j < sorted.length; j++) {
+
+                if (sorted[i].getScore() == sorted[j].getScore()) {
+                    // If their scores are even then sort them by tiebreaks
+                    if (sorted[i].getTieBreak() < sorted[j].getTieBreak()) {
+                        Player temp = sorted[i];
+                        sorted[i] = sorted[j];
+                        sorted[j] = temp;
+                    }
+
+                } else if (sorted[i].getScore() < sorted[j].getScore()) {
+                    // if J's score is larger than I's then swap them
+                    Player temp = sorted[i];
+                    sorted[i] = sorted[j];
+                    sorted[j] = temp;
+                }
+            }
+        }
+
+        return List.of(sorted);
     }
 
     public void setGamesFromDB() {
-        if(getIsImported()) return;
-        
+        if (getIsImported()) {
+            return;
+        }
+
         Map<Integer, Player> ps = new HashMap<>();
         System.out.println("Seeding tournament with games from Database...");
         List<Game> gs = te.getGames(id);
@@ -121,17 +146,23 @@ public class Tournament {
             System.out.println("No games were found for this tournament");
             return;
         }
-        
-        for(Game g : gs){
+
+        int count = 1;
+        for (Game g : gs) {
+            System.out.println(String.format("Game %d: %s", count, g));
             Player black = g.getBlack(), white = g.getWhite();
-            if(!ps.containsKey(black.getId())) ps.put(black.getId(), black);
-            if(!ps.containsKey(white.getId())) ps.put(white.getId(), white);
+            if (!ps.containsKey(black.getId())) {
+                ps.put(black.getId(), black);
+            }
+            if (!ps.containsKey(white.getId())) {
+                ps.put(white.getId(), white);
+            }
+            count++;
         }
-        
+
         setPlayers(new ArrayList<>(ps.values()));
 
     }
-
 
     public int getId() {
         return id;
@@ -228,7 +259,7 @@ public class Tournament {
     public void setGames(List<Game> games) {
         this.games = games;
     }
-    
+
     public boolean getIsImported() {
         return isImported;
     }

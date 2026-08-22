@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 public class DatabaseManager {
 
-    private final String url = "jdbc:ucanaccess://" + System.getProperty("user.dir") + "\\tournamentcontrol.accdb";
+    private final static String dbName = "tournamentcontrol", url = String.format("jdbc:ucanaccess://%s\\%s.accdb", System.getProperty("user.dir"), dbName);
     private static Connection conn;
 
     public DatabaseManager() {
@@ -20,15 +20,15 @@ public class DatabaseManager {
     /**
      * Initialises the database
      */
-    public void init() {
-
+    public static void init() {
+                
         try {
 
-            System.out.printf("Connecting to database with url (%s)...\n", url);
+            // System.out.printf("Connecting to database with url (%s)...\n", url);
             conn = DriverManager.getConnection(url);
 
             if (isConnected()) {
-                System.out.println("Connected!");
+                System.out.println("Connected to database!");
             }
 
             System.out.println();
@@ -38,7 +38,7 @@ public class DatabaseManager {
 
     }
 
-    public void closeConn() {
+    public static void closeConn() {
         try {
             conn.close();
             System.out.println("Connection to database closed.");
@@ -47,7 +47,7 @@ public class DatabaseManager {
         }
     }
 
-    public void printColumns() {
+    public static void printColumns() {
         try {
             DatabaseMetaData metaData = conn.getMetaData();
 
@@ -81,7 +81,7 @@ public class DatabaseManager {
         return conn;
     }
 
-    public boolean isConnected() throws SQLException {
+    public static boolean isConnected() throws SQLException {
         return conn.isValid(0);
     }
 }

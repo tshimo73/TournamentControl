@@ -4,15 +4,10 @@ import entities.TournamentEntity;
 import filing.InvalidFileExtensionException;
 import filing.importer.Importer;
 import java.util.List;
-import javax.swing.JButton;
 import javax.swing.table.DefaultTableModel;
 import jframeconfig.Config;
 import tournaments.Tournament;
-import java.awt.Font;
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JFileChooser;
 import ui.views.tournaments.ViewTournament;
 
 public class TournamentsPage extends javax.swing.JFrame {
@@ -83,7 +78,6 @@ public class TournamentsPage extends javax.swing.JFrame {
         lpnlTournamentPage = new javax.swing.JLayeredPane();
         spnlTable = new javax.swing.JScrollPane();
         tblTournaments = new javax.swing.JTable();
-        spnlTournaments = new javax.swing.JLabel();
         btnHomeTab = new javax.swing.JButton();
         btnCreateTournament = new javax.swing.JButton();
         btnImportTournament = new javax.swing.JButton();
@@ -105,10 +99,6 @@ public class TournamentsPage extends javax.swing.JFrame {
 
         lpnlTournamentPage.add(spnlTable);
         spnlTable.setBounds(20, 200, 1280, 460);
-
-        spnlTournaments.setForeground(new java.awt.Color(204, 204, 204));
-        lpnlTournamentPage.add(spnlTournaments);
-        spnlTournaments.setBounds(-130, -10, 1340, 710);
 
         btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnHomeTab.setText("Home");
@@ -231,29 +221,32 @@ public class TournamentsPage extends javax.swing.JFrame {
 	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
 	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
          */
+        
+        // I left the comments it made so that i can understand what it was doing
+        
         // 1. Force the file manager to look at a clean folder path to stop the crash loop
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
 
-// 2. Find the window that holds this page
+        // 2. Find the window that holds this page
         java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
         java.awt.Frame parentFrame = null;
         if (parentWindow instanceof java.awt.Frame frame) {
             parentFrame = frame;
         }
 
-// 3. Open a native operating system file dialogue (Bypasses Synth entirely)
+        // 3. Open a native operating system file dialogue (Bypasses Synth entirely)
         java.awt.FileDialog fileDialog = new java.awt.FileDialog(parentFrame, "Import Tournament", java.awt.FileDialog.LOAD);
 
-// 4. (Optional) Set it to start in your current project folder instead of the glitched Desktop
+        // 4. (Optional) Set it to start in your current project folder instead of the glitched Desktop
         fileDialog.setDirectory(System.getProperty("user.dir"));
 
         //this has been done by me
         fileDialog.setIconImage(cf.getIcon().getImage());
 
-// 5. Make the dialog visible (this pauses execution until the user selects a file or cancels)
+        // 5. Make the dialog visible (this pauses execution until the user selects a file or cancels)
         fileDialog.setVisible(true);
 
-// 6. Grab the results safely
+        // 6. Grab the results safely
         String directory = fileDialog.getDirectory();
         String filename = fileDialog.getFile();
         
@@ -324,7 +317,6 @@ public class TournamentsPage extends javax.swing.JFrame {
     private javax.swing.JButton btnImportTournament;
     private javax.swing.JLayeredPane lpnlTournamentPage;
     private javax.swing.JScrollPane spnlTable;
-    private javax.swing.JLabel spnlTournaments;
     private javax.swing.JTable tblTournaments;
     // End of variables declaration//GEN-END:variables
 }

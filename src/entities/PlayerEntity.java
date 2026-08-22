@@ -12,7 +12,7 @@ import enums.PlayerTitle;
 public class PlayerEntity extends Entity<Player> {
     
     public PlayerEntity() {
-        super(Player.class);
+        super(Player.class, "tblRegistrations");
     }
     
     @Override

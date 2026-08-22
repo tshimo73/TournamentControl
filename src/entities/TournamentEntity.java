@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 
 public class TournamentEntity extends Entity<Tournament> {
 
-    private final DatabaseManager dm = new DatabaseManager();
     private final PlayerEntity pe = new PlayerEntity();
 
     public TournamentEntity() {
@@ -29,7 +28,7 @@ public class TournamentEntity extends Entity<Tournament> {
         List<Game> games = new ArrayList<>();
         try {
             String sql = "SELECT * FROM tblGames WHERE tournament_id = ?";
-            PreparedStatement stmt = dm.getConn().prepareStatement(sql);
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
             stmt.setInt(1, id);
 
             ResultSet rs = stmt.executeQuery();

@@ -17,10 +17,11 @@ import utils.*;
 import java.util.Comparator;
 
 public class MatchMaker {
+
     int round = 1;
     protected List<Player> players; // players
     private final Map<Player, List<Player>> previousOpponents; // key: player, value: their opponents
-    private final Map<Player, Integer> colourBalance; // +1 white, -1 black
+    private final Map<Player, Integer> colourBalance; // +1 white, -1 black (ensures that players do not always play the same colour)
     private final Map<Player, Boolean> hasRecievedBye; // has the player recieved a BYE?
 
     public MatchMaker(List<Player> ps, int round) {
@@ -37,32 +38,36 @@ public class MatchMaker {
             hasRecievedBye.put(p, false);
         }
     }
-    
-    
 
+    /**
+     * Generates a Tournament round.
+     *
+     * @param t
+     * @return
+     */
     public List<Game> generateRound(Tournament t) {
         List<List<Player>> scoreGroups = buildScoreGroups();
         List<Game> roundGames = new ArrayList<>();
         List<Player> leftover = new ArrayList<>();
-        
-        for(List<Player> group : scoreGroups){
+
+        for (List<Player> group : scoreGroups) {
             // take previous group left over
             group.addAll(0, leftover);
             leftover.clear();
-            
+
             //if group isnt even, pull lowest player to the next group
-            if(group.size() % 2 != 0){
+            if (group.size() % 2 != 0) {
                 leftover.add(group.remove(group.size() - 1));
             }
-            
+
             roundGames.addAll(pairGroup(group, t));
         }
-        
+
         // whoever is left gets a bye
-        if(!leftover.isEmpty()) {
+        if (!leftover.isEmpty()) {
             assignBye(leftover.get(0));
         }
-         System.out.println(roundGames);
+        System.out.println(roundGames);
         return roundGames;
     }
 
@@ -74,16 +79,37 @@ public class MatchMaker {
         this.round = round;
     }
 
+    /**
+     * Builds match making based on score
+     *
+     * @return
+     */
     private List<List<Player>> buildScoreGroups() {
         // sort by score decending, rating desc as tiebreaker
-        List<Player> sorted = players;
+        Player[] sorted = (Player[]) players.toArray();
 
-        sorted.sort((a, b) -> {
-            if (b.getScore() != a.getScore()) {
-                return Double.compare(b.getScore(), a.getScore());
+        // manually sorting them (for marks and then converting back to array
+        // lists because i find them easier to use in this project)
+        for (int i = 0; i < sorted.length - 1; i++) {
+            for (int j = i + 1; j < sorted.length; j++) {
+
+                if (sortd[i].getScore() == sorted[j].getScore()) {
+                    // If their scores are even then sort them by tiebreaks
+                    if (sorted[i].getTieBreak() < sorted[j].getTieBreak()) {
+                        Player temp = sorted[i];
+                        sorted[i] = sorted[j];
+                        sorted[j] = temp;
+                    }
+
+                } else if (sorted[i].getScore() < sorted[j].getScore()) {
+                    // if J's score is larger than I's then swap them
+                    Player temp = sorted[i];
+                    sorted[i] = sorted[j];
+                    sorted[j] = temp;
+                }
             }
-            return Double.compare(a.getRating(), b.getRating());
-        });
+        }
+        
 
         //group players with the same score together
         List<List<Player>> groups = new ArrayList<>();
@@ -141,13 +167,12 @@ public class MatchMaker {
 
             previousOpponents.get(a).add(b);
             previousOpponents.get(b).add(a);
-            
+
             // assign colours and make game
-            
             Game game = assignColours(a, b, t);
             game.setRound(round);
             games.add(game.generateResult());
-            
+
         }
         return games;
     }
@@ -157,23 +182,23 @@ public class MatchMaker {
     }
 
     private void assignBye(Player p) {
-        if(!hasRecievedBye.get(p)){
+        if (!hasRecievedBye.get(p)) {
             p.setScore(p.getScore() + 0.5);
             hasRecievedBye.put(p, true);
         }
-    }   
+    }
 
     private Game assignColours(Player a, Player b, Tournament t) {
         int balanceA = colourBalance.get(a);
         int balanceB = colourBalance.get(b);
-        
+
         Player white, black;
-        
-        if(balanceA < balanceB){
+
+        if (balanceA < balanceB) {
             // a has played more black, then give them white
             white = a;
             black = b;
-        } else if (balanceA > balanceB){
+        } else if (balanceA > balanceB) {
             // b has played more black, give them white
             white = b;
             black = a;
@@ -182,10 +207,10 @@ public class MatchMaker {
             white = a.getRating() >= b.getRating() ? a : b;
             black = white == a ? b : a;
         }
-        
+
         colourBalance.put(white, colourBalance.get(white) + 1);
         colourBalance.put(black, colourBalance.get(black) - 1);
-        
-        return GameManager.generateGame(white, black, t, round); 
+
+        return GameManager.generateGame(white, black, t, round);
     }
 }
