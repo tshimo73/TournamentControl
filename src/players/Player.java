@@ -1,15 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 
 package players;
 
 import enums.PlayerTitle;
-import net.datafaker.Faker;
 
 public class Player {
-    protected int id;
+    protected int id, tournamentID;
     protected String firstName, lastName, fideID, federation;
     protected double rating, score = 0.0, tieBreak = 0.0;
     protected PlayerTitle title;
@@ -32,6 +27,7 @@ public class Player {
 
     @Override
     public String toString() {
+        // add tournament id save 
         StringBuilder sb = new StringBuilder();
         sb.append("PLAYER").append("#");
         sb.append(id).append("#");
@@ -124,6 +120,12 @@ public class Player {
         this.tieBreak = tieBreak;
     }
     
+    public void setTournamentID(int tID){
+        this.tournamentID = tID;
+    }
     
+    public int getTournamentID(){
+        return tournamentID;
+    }
     
 }
