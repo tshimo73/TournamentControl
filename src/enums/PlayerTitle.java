@@ -68,4 +68,22 @@ public enum PlayerTitle {
                 return Random.getRandomDouble(100, 999);
         }
     }
+    
+    @Override
+    public String toString() {
+        switch (this) {
+            case NM:
+                return "NM";
+            case CM:
+                return "CM";
+            case FM:
+                return "FM";
+            case IM:
+                return "IM";
+            case GM:
+                return "GM";
+            default:
+                return "N/A";
+        }
+    }
 }

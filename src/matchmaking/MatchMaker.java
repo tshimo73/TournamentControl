@@ -93,7 +93,7 @@ public class MatchMaker {
         for (int i = 0; i < sorted.length - 1; i++) {
             for (int j = i + 1; j < sorted.length; j++) {
 
-                if (sortd[i].getScore() == sorted[j].getScore()) {
+                if (sorted[i].getScore() == sorted[j].getScore()) {
                     // If their scores are even then sort them by tiebreaks
                     if (sorted[i].getTieBreak() < sorted[j].getTieBreak()) {
                         Player temp = sorted[i];

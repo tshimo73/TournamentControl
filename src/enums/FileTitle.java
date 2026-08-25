@@ -7,19 +7,4 @@ package enums;
 */
 public enum FileTitle {
     TOURNAMENT, PLAYER, GAME, END;
-    
-    @Override
-    public String toString(){
-        switch(this){
-            case TOURNAMENT: return "TOURNAMENT";
-              
-            case PLAYER: return "PLAYER";
-                
-            case GAME: return "GAME";
-            
-            case END: return "END";
-                
-            default: return "";
-        }
-    }
 }

@@ -17,12 +17,12 @@ import javax.swing.ImageIcon;
 public class Config {
 
     // frame settings
-    private static final String PROJECT_NAME = "Tournament Control";
-    private static final int FRAME_WIDTH = 1338, FRAME_HEIGHT = 707,
+    public static final String PROJECT_NAME = "Tournament Control";
+    public static final int FRAME_WIDTH = 1338, FRAME_HEIGHT = 707,
                              X_COORD = 0, Y_COORD = 0;
 
     // Tournament Control's Logo
-    private static final ImageIcon ICON = new ImageIcon(Config.class.getResource("/images/TC_Logo.png"));
+    public static final ImageIcon ICON = new ImageIcon(Config.class.getResource("/images/TC_Logo.png"));
 
     //get a specific image
     public static ImageIcon getImage(String imageName) {
@@ -49,14 +49,14 @@ public class Config {
      */
     public static void setAttributes(javax.swing.JFrame frame, String title) {
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setIconImage(getIcon().getImage());
+        frame.setIconImage(ICON.getImage());
         frame.setTitle(title);
         frame.setLocationRelativeTo(frame);
     }
 
     public static void setAttributes(javax.swing.JFrame frame) {
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setIconImage(getIcon().getImage());
+        frame.setIconImage(ICON.getImage());
         frame.setTitle(PROJECT_NAME);
         frame.setLocationRelativeTo(frame);
     }

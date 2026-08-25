@@ -4,10 +4,10 @@ package players;
 import enums.PlayerTitle;
 
 public class Player {
-    protected int id, tournamentID;
-    protected String firstName, lastName, fideID, federation;
-    protected double rating, score = 0.0, tieBreak = 0.0;
-    protected PlayerTitle title;
+    private int id, tournamentID = -1;
+    private String firstName, lastName, fideID, federation;
+    private double rating, score = 0.0, tieBreak = 0.0;
+    private PlayerTitle title;
     
     public Player(int id, String fN, String lN, String FID, String fed, double rat, PlayerTitle t){
         this.id = id;
@@ -127,5 +127,9 @@ public class Player {
     public int getTournamentID(){
         return tournamentID;
     }
+    
+    
+    
+    
     
 }
