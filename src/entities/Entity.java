@@ -27,7 +27,7 @@ abstract class Entity<T> {
 
         System.out.println("From " + table + "\n");
     }
-    
+
     public Entity(Class<T> c, String table) {
         this.table = table;
 
@@ -129,10 +129,11 @@ abstract class Entity<T> {
     }
 
     /**
-     * Updates 
+     * A method i made to update records in a table with ease
+     *
      * @param id
      * @param attrs
-     * @return 
+     * @return
      */
     public T update(int id, Map<String, Object> attrs) {
         try {
@@ -141,31 +142,41 @@ abstract class Entity<T> {
             // didnt want to work in the lambda cause they 'had to be final'
             StringBuilder sql = new StringBuilder();
             sql.append(String.format("UPDATE %s SET ", table));
-            
+
             attrs.forEach((key, value) -> {
-                sql.append(String.format("%s = %s, ", key, value));
+                if (value instanceof String) {
+                    sql.append(String.format("%s = \"%s\", ", key, value));
+                } else {
+                    sql.append(String.format("%s = %s, ", key, value));
+                }
             });
 
-            sql.deleteCharAt(sql.length() - 1); // to get rid of the comma at the end.
+            sql.deleteCharAt(sql.length() - 2); // to get rid of the comma and space at the end.
             sql.append(" WHERE id = ?");
 
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql.toString());
-            
-            if(stmt.executeUpdate() > 0){
+            stmt.setInt(1, id);
+
+            if (stmt.executeUpdate() > 0) {
                 Statement s = DatabaseManager.getConn().createStatement();
                 ResultSet rs = s.executeQuery(String.format("SELECT *"
                         + " FROM %s WHERE id = %d", table, id));
-                
-                ResultSetMetaData meta = rs.getMetaData();
-                Map<String, Object> row = new HashMap<>();
 
-                for (int i = 1; i <= meta.getColumnCount(); i++) {
-                    row.put(meta.getColumnName(i), rs.getObject(i));
-                    System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
-                }
+                if (rs.next()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    Map<String, Object> row = new HashMap<>();
 
-                return mapRow(row);
-            } else return null;
+                    for (int i = 1; i <= meta.getColumnCount(); i++) {
+                        row.put(meta.getColumnName(i), rs.getObject(i));
+                        System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
+                    }
+
+                    return mapRow(row);
+                } else return null;
+
+            } else {
+                return null;
+            }
         } catch (SQLException ex) {
             Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
             return null;
