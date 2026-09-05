@@ -18,10 +18,10 @@ import matchmaking.MatchMaker;
 public class Tournament {
 
     protected final TournamentEntity te = new TournamentEntity();
-    protected String name, federation, director, chiefArbiter, deputyChiefArbiter;
+    protected String name, federation, director, chiefArbiter, deputyChiefArbiter, id;
     protected TournamentType tournamentType;
     protected LocalDateTime startDate, endDate;
-    protected int rounds, id;
+    protected int rounds;
     protected List<Player> players = new ArrayList<>();
     protected List<Game> games = new ArrayList<>();
     protected boolean isImported = false;
@@ -164,11 +164,11 @@ public class Tournament {
 
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

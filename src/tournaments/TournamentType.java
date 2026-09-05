@@ -118,6 +118,20 @@ public enum TournamentType {
         }
     }
     
+       public static TournamentType getValueFromName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+
+        for (TournamentType type : values()) {
+            if (type.getName().equalsIgnoreCase(name.trim())) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+    
     @Override
     public String toString(){
         return this.getName();
