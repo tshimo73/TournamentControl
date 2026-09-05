@@ -24,7 +24,8 @@ public class Tournament {
     protected int rounds;
     protected List<Player> players = new ArrayList<>();
     protected List<Game> games = new ArrayList<>();
-    protected boolean isImported = false;
+    protected boolean isImported = false, hasEnded = false;
+
 
     /**
      * Tournament with players and games set
@@ -162,6 +163,15 @@ public class Tournament {
 
         setPlayers(new ArrayList<>(ps.values()));
 
+    }
+    
+    
+    public boolean hasEnded() {
+        return hasEnded;
+    }
+
+    public void setHasEnded(boolean hasEnded) {
+        this.hasEnded = hasEnded;
     }
 
     public String getId() {

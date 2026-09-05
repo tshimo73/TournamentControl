@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.datafaker.Faker;
 import net.datafaker.providers.sport.Chess;
 import players.Player;
@@ -61,6 +62,7 @@ public class TournamentManager {
         int rounds = type.getRounds(numPlayers);
 
         Tournament t = new Tournament();
+        t.setId(UUID.randomUUID().toString());
         t.setName(name);
         t.setFederation(fed);
         t.setDirector(dir);
@@ -88,6 +90,7 @@ public class TournamentManager {
         int rounds = type.getRounds();
 
         Tournament t = new Tournament();
+        t.setId(UUID.randomUUID().toString());
         t.setName(name);
         t.setFederation(fed);
         t.setDirector(dir);
