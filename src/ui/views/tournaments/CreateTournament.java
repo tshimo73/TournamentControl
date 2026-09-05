@@ -1,9 +1,13 @@
 
 package ui.views.tournaments;
 
+import enums.Federation;
 import jframeconfig.Config;
+import net.datafaker.Faker;
+import tournaments.TournamentType;
 
 public class CreateTournament extends javax.swing.JFrame {
+    private static final Faker F = new Faker();
     Config cf = new Config();
     
     /**
@@ -14,6 +18,20 @@ public class CreateTournament extends javax.swing.JFrame {
         
         cf.setAttributes(this, "Create A Tournament");
         lblHeading.setFont(cf.getFont());
+        
+        // adding the federations to the combo box
+        Federation[] fedValues = Federation.values();
+        
+        for(Federation fed : fedValues){
+            cBoxFed.addItem(fed.getCountryName());
+        }
+        
+        // adding the tournament types to the combo box
+        TournamentType[] tTypes = TournamentType.values();
+        
+        for(TournamentType t : tTypes){
+            if(t != TournamentType.INVALID) cBoxTT.addItem(t.getName());
+        }
     }
 
     /**
@@ -29,6 +47,26 @@ public class CreateTournament extends javax.swing.JFrame {
         btnHomeTab = new javax.swing.JButton();
         btnTournamentTab = new javax.swing.JButton();
         lblHeading = new javax.swing.JLabel();
+        lblTName = new javax.swing.JLabel();
+        lblFed = new javax.swing.JLabel();
+        lblDirector = new javax.swing.JLabel();
+        lblCA = new javax.swing.JLabel();
+        lblDCA = new javax.swing.JLabel();
+        lblType = new javax.swing.JLabel();
+        lblStart = new javax.swing.JLabel();
+        lblEnd = new javax.swing.JLabel();
+        txfDirector = new javax.swing.JTextField();
+        txfCA = new javax.swing.JTextField();
+        txfDCA = new javax.swing.JTextField();
+        txfName = new javax.swing.JTextField();
+        btnGDN = new javax.swing.JButton();
+        btnGCAN = new javax.swing.JButton();
+        btnGDCAN = new javax.swing.JButton();
+        btnGTN = new javax.swing.JButton();
+        cBoxTT = new javax.swing.JComboBox<>();
+        cBoxFed = new javax.swing.JComboBox<>();
+        fTxfEnd = new javax.swing.JFormattedTextField();
+        fTxfStart = new javax.swing.JFormattedTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -59,15 +97,127 @@ public class CreateTournament extends javax.swing.JFrame {
         lpnlCT.add(lblHeading);
         lblHeading.setBounds(420, 20, 390, 40);
 
+        lblTName.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblTName.setText("Tournament Name: ");
+        lpnlCT.add(lblTName);
+        lblTName.setBounds(30, 140, 250, 30);
+
+        lblFed.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblFed.setText("Tournament Federation:");
+        lpnlCT.add(lblFed);
+        lblFed.setBounds(30, 190, 250, 30);
+
+        lblDirector.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblDirector.setText("Director:");
+        lpnlCT.add(lblDirector);
+        lblDirector.setBounds(30, 240, 250, 30);
+
+        lblCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblCA.setText("Chief Arbitor:");
+        lpnlCT.add(lblCA);
+        lblCA.setBounds(30, 290, 250, 30);
+
+        lblDCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblDCA.setText("Deputy Chief Arbiter:");
+        lpnlCT.add(lblDCA);
+        lblDCA.setBounds(30, 340, 250, 30);
+
+        lblType.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblType.setText("Tournament Type:");
+        lpnlCT.add(lblType);
+        lblType.setBounds(30, 390, 250, 30);
+
+        lblStart.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblStart.setText("Start Date and Time:");
+        lpnlCT.add(lblStart);
+        lblStart.setBounds(30, 440, 250, 30);
+
+        lblEnd.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblEnd.setText("End Date and Time:");
+        lpnlCT.add(lblEnd);
+        lblEnd.setBounds(30, 490, 250, 30);
+        lpnlCT.add(txfDirector);
+        txfDirector.setBounds(290, 240, 340, 30);
+        lpnlCT.add(txfCA);
+        txfCA.setBounds(290, 290, 340, 30);
+        lpnlCT.add(txfDCA);
+        txfDCA.setBounds(290, 340, 340, 30);
+
+        txfName.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txfNameActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(txfName);
+        txfName.setBounds(290, 140, 340, 30);
+
+        btnGDN.setText("Generate Director Name");
+        btnGDN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGDNActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnGDN);
+        btnGDN.setBounds(700, 240, 220, 30);
+
+        btnGCAN.setText("Generate CA Name");
+        btnGCAN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGCANActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnGCAN);
+        btnGCAN.setBounds(700, 290, 220, 30);
+
+        btnGDCAN.setText("Generate DCA Name");
+        btnGDCAN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGDCANActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnGDCAN);
+        btnGDCAN.setBounds(700, 340, 220, 30);
+
+        btnGTN.setText("Generate Tournament Name");
+        btnGTN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGTNActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnGTN);
+        btnGTN.setBounds(700, 140, 220, 30);
+
+        cBoxTT.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
+        cBoxTT.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cBoxTTActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(cBoxTT);
+        cBoxTT.setBounds(290, 392, 340, 30);
+
+        cBoxFed.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
+        cBoxFed.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cBoxFedActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(cBoxFed);
+        cBoxFed.setBounds(290, 190, 340, 30);
+        lpnlCT.add(fTxfEnd);
+        fTxfEnd.setBounds(290, 492, 340, 30);
+        lpnlCT.add(fTxfStart);
+        fTxfStart.setBounds(290, 442, 340, 30);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 1112, Short.MAX_VALUE)
+            .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 371, Short.MAX_VALUE)
+            .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
         );
 
         pack();
@@ -82,6 +232,34 @@ public class CreateTournament extends javax.swing.JFrame {
         this.dispose();
         new ui.tabbedPanels.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
+
+    private void txfNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfNameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txfNameActionPerformed
+
+    private void btnGTNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGTNActionPerformed
+        txfName.setText(F.chess().tournament());
+    }//GEN-LAST:event_btnGTNActionPerformed
+
+    private void btnGDNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGDNActionPerformed
+        txfDirector.setText(F.name().fullName());
+    }//GEN-LAST:event_btnGDNActionPerformed
+
+    private void btnGCANActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGCANActionPerformed
+        txfCA.setText(F.name().fullName());
+    }//GEN-LAST:event_btnGCANActionPerformed
+
+    private void btnGDCANActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGDCANActionPerformed
+       txfDCA.setText(F.name().fullName());
+    }//GEN-LAST:event_btnGDCANActionPerformed
+
+    private void cBoxTTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxTTActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cBoxTTActionPerformed
+
+    private void cBoxFedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxFedActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cBoxFedActionPerformed
 
     /**
      * @param args the command line arguments
@@ -119,9 +297,29 @@ public class CreateTournament extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnGCAN;
+    private javax.swing.JButton btnGDCAN;
+    private javax.swing.JButton btnGDN;
+    private javax.swing.JButton btnGTN;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnTournamentTab;
+    private javax.swing.JComboBox<String> cBoxFed;
+    private javax.swing.JComboBox<String> cBoxTT;
+    private javax.swing.JFormattedTextField fTxfEnd;
+    private javax.swing.JFormattedTextField fTxfStart;
+    private javax.swing.JLabel lblCA;
+    private javax.swing.JLabel lblDCA;
+    private javax.swing.JLabel lblDirector;
+    private javax.swing.JLabel lblEnd;
+    private javax.swing.JLabel lblFed;
     private javax.swing.JLabel lblHeading;
+    private javax.swing.JLabel lblStart;
+    private javax.swing.JLabel lblTName;
+    private javax.swing.JLabel lblType;
     private javax.swing.JLayeredPane lpnlCT;
+    private javax.swing.JTextField txfCA;
+    private javax.swing.JTextField txfDCA;
+    private javax.swing.JTextField txfDirector;
+    private javax.swing.JTextField txfName;
     // End of variables declaration//GEN-END:variables
 }
