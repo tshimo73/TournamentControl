@@ -1,37 +1,65 @@
-
 package ui.views.tournaments;
 
+import entities.TournamentEntity;
 import enums.Federation;
+import java.util.HashMap;
+import java.util.UUID;
+import javax.swing.JOptionPane;
 import jframeconfig.Config;
 import net.datafaker.Faker;
+import tournaments.Tournament;
 import tournaments.TournamentType;
+import utils.Validation;
 
 public class CreateTournament extends javax.swing.JFrame {
+
     private static final Faker F = new Faker();
-    Config cf = new Config();
-    
+    private Config cf = new Config();
+    private boolean isValid = false;
+
     /**
      * Creates new form CreateTournament
      */
     public CreateTournament() {
         initComponents();
-        
         cf.setAttributes(this, "Create A Tournament");
         lblHeading.setFont(cf.getFont());
-        
+
+        // setting up slider
+        sliderRounds.setMinimum(1);
+        sliderRounds.setMaximum(20);
+        sliderRounds.setValue(5);
+        lblNumRounds.setText(sliderRounds.getValue() + "");
+
         // adding the federations to the combo box
         Federation[] fedValues = Federation.values();
-        
-        for(Federation fed : fedValues){
+
+        for (Federation fed : fedValues) {
             cBoxFed.addItem(fed.getCountryName());
         }
-        
+
         // adding the tournament types to the combo box
         TournamentType[] tTypes = TournamentType.values();
-        
-        for(TournamentType t : tTypes){
-            if(t != TournamentType.INVALID) cBoxTT.addItem(t.getName());
+
+        for (TournamentType t : tTypes) {
+            if (t != TournamentType.INVALID) {
+                cBoxTT.addItem(t.getName());
+            }
         }
+    }
+
+    private String checkStringFields() {
+        HashMap<String, String> fields = new HashMap<>();
+        fields.put("Tournament Name", txfName.getText());
+        fields.put("Director", txfDirector.getText());
+        fields.put("Chief Arbiter", txfCA.getText());
+        fields.put("Chief Deputy Arbiter", txfDCA.getText());
+
+        return Validation.isAnyBlank(fields);
+    }
+
+    private String checkStartAndEnd() {
+        return Validation.isDateGood(dtpStart.getDateTimeStrict(), dtpEnd.getDateTimeStrict());
     }
 
     /**
@@ -65,8 +93,13 @@ public class CreateTournament extends javax.swing.JFrame {
         btnGTN = new javax.swing.JButton();
         cBoxTT = new javax.swing.JComboBox<>();
         cBoxFed = new javax.swing.JComboBox<>();
-        fTxfEnd = new javax.swing.JFormattedTextField();
-        fTxfStart = new javax.swing.JFormattedTextField();
+        dtpStart = new com.github.lgooddatepicker.components.DateTimePicker();
+        dtpEnd = new com.github.lgooddatepicker.components.DateTimePicker();
+        btnValidate = new javax.swing.JButton();
+        btnSubmit = new javax.swing.JButton();
+        sliderRounds = new javax.swing.JSlider();
+        lblRounds = new javax.swing.JLabel();
+        lblNumRounds = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -127,15 +160,15 @@ public class CreateTournament extends javax.swing.JFrame {
         lpnlCT.add(lblType);
         lblType.setBounds(30, 390, 250, 30);
 
-        lblStart.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblStart.setText("Start Date and Time:");
+        lblStart.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblStart);
-        lblStart.setBounds(30, 440, 250, 30);
+        lblStart.setBounds(30, 480, 250, 30);
 
-        lblEnd.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblEnd.setText("End Date and Time:");
+        lblEnd.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblEnd);
-        lblEnd.setBounds(30, 490, 250, 30);
+        lblEnd.setBounds(30, 540, 250, 30);
         lpnlCT.add(txfDirector);
         txfDirector.setBounds(290, 240, 340, 30);
         lpnlCT.add(txfCA);
@@ -204,10 +237,46 @@ public class CreateTournament extends javax.swing.JFrame {
         });
         lpnlCT.add(cBoxFed);
         cBoxFed.setBounds(290, 190, 340, 30);
-        lpnlCT.add(fTxfEnd);
-        fTxfEnd.setBounds(290, 492, 340, 30);
-        lpnlCT.add(fTxfStart);
-        fTxfStart.setBounds(290, 442, 340, 30);
+        lpnlCT.add(dtpStart);
+        dtpStart.setBounds(290, 480, 340, 30);
+        lpnlCT.add(dtpEnd);
+        dtpEnd.setBounds(290, 540, 340, 30);
+
+        btnValidate.setText("Validate Form");
+        btnValidate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnValidateActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnValidate);
+        btnValidate.setBounds(1000, 410, 220, 50);
+
+        btnSubmit.setText("Create Tournament");
+        btnSubmit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSubmitActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnSubmit);
+        btnSubmit.setBounds(1000, 480, 220, 50);
+
+        sliderRounds.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                sliderRoundsStateChanged(evt);
+            }
+        });
+        lpnlCT.add(sliderRounds);
+        sliderRounds.setBounds(290, 440, 350, 30);
+
+        lblRounds.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblRounds.setText("Number of Rounds:");
+        lpnlCT.add(lblRounds);
+        lblRounds.setBounds(30, 440, 250, 30);
+
+        lblNumRounds.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        lblNumRounds.setText("0");
+        lpnlCT.add(lblNumRounds);
+        lblNumRounds.setBounds(660, 440, 210, 30);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -250,7 +319,7 @@ public class CreateTournament extends javax.swing.JFrame {
     }//GEN-LAST:event_btnGCANActionPerformed
 
     private void btnGDCANActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGDCANActionPerformed
-       txfDCA.setText(F.name().fullName());
+        txfDCA.setText(F.name().fullName());
     }//GEN-LAST:event_btnGDCANActionPerformed
 
     private void cBoxTTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxTTActionPerformed
@@ -260,6 +329,66 @@ public class CreateTournament extends javax.swing.JFrame {
     private void cBoxFedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxFedActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_cBoxFedActionPerformed
+
+    private void btnValidateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnValidateActionPerformed
+        String sFields = checkStringFields(), dFields = checkStartAndEnd(), errors = "";
+
+        if (!sFields.isBlank()) {
+            errors += sFields;
+        }
+
+        if (!dFields.isBlank()) {
+            errors += dFields;
+        }
+
+        if (errors.isBlank()) {
+            String v = "All fields are valid.";
+            isValid = true;
+            System.out.println(v);
+            JOptionPane.showMessageDialog(this, v);
+        } else {
+            JOptionPane.showMessageDialog(this, errors);
+        }
+    }//GEN-LAST:event_btnValidateActionPerformed
+
+    private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
+        if (!isValid) {
+            String v = "Form is not yet valid/validated.";
+            System.out.println(v);
+            JOptionPane.showMessageDialog(this, v);
+        } else {
+            String id = UUID.randomUUID().toString();
+            JOptionPane.showMessageDialog(this, "Please wait until you have been redirected.\nThe tournament is being added into the database.\nClick 'OK' after reading this message.");
+
+            // create tournament
+            Tournament t = new Tournament();
+            t.setId(id);
+            t.setName(txfName.getText());
+            t.setFederation(Federation.getValueFromName((String) cBoxFed.getSelectedItem()).toString());
+            t.setDirector(txfDirector.getText());
+            t.setChiefArbiter(txfCA.getText());
+            t.setDeputyChiefArbiter(txfDCA.getText());
+            t.setTournamentType(TournamentType.getValueFromName((String) cBoxTT.getSelectedItem()));
+            t.setStartDate(dtpStart.getDateTimeStrict());
+            t.setEndDate(dtpEnd.getDateTimeStrict());
+            t.setRounds(sliderRounds.getValue());
+
+            System.out.println(t);
+
+            TournamentEntity te = new TournamentEntity();
+            if (te.insert(t)) {
+
+                this.dispose();
+                new ConfigureTournament(id).setVisible(true);
+            } else {
+                System.out.println("Failed to create tournament.");
+            }
+        }
+    }//GEN-LAST:event_btnSubmitActionPerformed
+
+    private void sliderRoundsStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderRoundsStateChanged
+        lblNumRounds.setText(sliderRounds.getValue() + "");
+    }//GEN-LAST:event_sliderRoundsStateChanged
 
     /**
      * @param args the command line arguments
@@ -302,21 +431,26 @@ public class CreateTournament extends javax.swing.JFrame {
     private javax.swing.JButton btnGDN;
     private javax.swing.JButton btnGTN;
     private javax.swing.JButton btnHomeTab;
+    private javax.swing.JButton btnSubmit;
     private javax.swing.JButton btnTournamentTab;
+    private javax.swing.JButton btnValidate;
     private javax.swing.JComboBox<String> cBoxFed;
     private javax.swing.JComboBox<String> cBoxTT;
-    private javax.swing.JFormattedTextField fTxfEnd;
-    private javax.swing.JFormattedTextField fTxfStart;
+    private com.github.lgooddatepicker.components.DateTimePicker dtpEnd;
+    private com.github.lgooddatepicker.components.DateTimePicker dtpStart;
     private javax.swing.JLabel lblCA;
     private javax.swing.JLabel lblDCA;
     private javax.swing.JLabel lblDirector;
     private javax.swing.JLabel lblEnd;
     private javax.swing.JLabel lblFed;
     private javax.swing.JLabel lblHeading;
+    private javax.swing.JLabel lblNumRounds;
+    private javax.swing.JLabel lblRounds;
     private javax.swing.JLabel lblStart;
     private javax.swing.JLabel lblTName;
     private javax.swing.JLabel lblType;
     private javax.swing.JLayeredPane lpnlCT;
+    private javax.swing.JSlider sliderRounds;
     private javax.swing.JTextField txfCA;
     private javax.swing.JTextField txfDCA;
     private javax.swing.JTextField txfDirector;
