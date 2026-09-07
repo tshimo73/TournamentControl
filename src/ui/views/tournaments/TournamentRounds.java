@@ -13,7 +13,11 @@ import matchmaking.MatchMaker;
 import players.Player;
 import tournaments.Tournament;
 import database.PlayerFields;
+import entities.GameEntity;
+import games.Game;
 import java.util.HashMap;
+import javax.swing.JOptionPane;
+import jframeconfig.Config;
 
 /**
  *
@@ -23,17 +27,48 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     private final TournamentEntity TE = new TournamentEntity();
     private final PlayerEntity PE = new PlayerEntity();
+    private final GameEntity GE = new GameEntity();
     private Tournament t;
     private final DefaultTableModel MODEL = new DefaultTableModel();
     private MatchMaker mm;
+    private int currRound = 1, maxRounds;
+    private List<List<Game>> gamesForEachRound = new ArrayList<>(new ArrayList<>());
 
     /**
      * Creates new form TournamentRounds
      */
     public TournamentRounds(Tournament t) {
         initComponents();
+        Config.setAttributes(this, "Tournament Rounds");
+
         this.t = t;
 
+        // set the players who registered into the tournament from the database
+        setRegisteredPlayers();
+
+        lblHeading.setText(t.getName());
+        maxRounds = t.getRounds();
+
+        // initialise the matchmaker
+        initMatchMaker();
+    }
+
+    private void doRound() {
+        if (currRound <= maxRounds) {
+            gamesForEachRound.add(mm.generateRound(t));
+
+            currRound++;
+            mm.setRound(currRound);
+        } else {
+            String s = "Tournament has already reached the maximum amount of rounds. This cannot be changed.";
+            System.out.println(s);
+            JOptionPane.showMessageDialog(this, "s");
+            
+            HashMap<String, Object> attrs = new HashMap<>();
+            attrs.put("has_ended", true);
+            
+            t = TE.update(t.getId(), attrs);
+        }
     }
 
     private void setRegisteredPlayers() {
@@ -45,11 +80,16 @@ public class TournamentRounds extends javax.swing.JFrame {
             for (HashMap<String, Object> playerRow : ps) {
                 players.add(PE.mapRow(playerRow));
             }
-             t.setPlayers(players);
+            t.setPlayers(players);
         } else {
             System.out.println("No registered players in this tournament.");
+            JOptionPane.showMessageDialog(this, "This tournament does not have enough players.");
         }
 
+    }
+
+    private void initMatchMaker() {
+        mm = new MatchMaker(t.getPlayers(), currRound);
     }
 
     /**
@@ -86,7 +126,6 @@ public class TournamentRounds extends javax.swing.JFrame {
 
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblHeading.setText("Matchmaking");
 
         lpnlTR.setLayer(btnHomeTab, javax.swing.JLayeredPane.DEFAULT_LAYER);
         lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
@@ -113,7 +152,7 @@ public class TournamentRounds extends javax.swing.JFrame {
                     .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(637, Short.MAX_VALUE))
+                .addContainerGap(638, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
