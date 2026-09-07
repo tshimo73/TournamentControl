@@ -51,6 +51,12 @@ public class TournamentRounds extends javax.swing.JFrame {
 
         // initialise the matchmaker
         initMatchMaker();
+        
+        // set round combo box items
+        
+        for (int i = currRound; i <= maxRounds; i++) {
+            cBoxRound.addItem(i);
+        }
     }
 
     private void doRound() {
@@ -68,6 +74,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             attrs.put("has_ended", true);
             
             t = TE.update(t.getId(), attrs);
+            t.setPlayers(mm.getLeaderBoard());
         }
     }
 
@@ -105,6 +112,8 @@ public class TournamentRounds extends javax.swing.JFrame {
         btnHomeTab = new javax.swing.JButton();
         btnTournamentTab = new javax.swing.JButton();
         lblHeading = new javax.swing.JLabel();
+        cBoxRound = new javax.swing.JComboBox<>();
+        lblHeading1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -127,9 +136,22 @@ public class TournamentRounds extends javax.swing.JFrame {
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
+        cBoxRound.setModel(new javax.swing.DefaultComboBoxModel<>(new int[] {}));
+        cBoxRound.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cBoxRoundActionPerformed(evt);
+            }
+        });
+
+        lblHeading1.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
+        lblHeading1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblHeading1.setText("Select Round.");
+
         lpnlTR.setLayer(btnHomeTab, javax.swing.JLayeredPane.DEFAULT_LAYER);
         lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTR.setLayer(lblHeading, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        lpnlTR.setLayer(cBoxRound, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        lpnlTR.setLayer(lblHeading1, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout lpnlTRLayout = new javax.swing.GroupLayout(lpnlTR);
         lpnlTR.setLayout(lpnlTRLayout);
@@ -138,11 +160,20 @@ public class TournamentRounds extends javax.swing.JFrame {
             .addGroup(lpnlTRLayout.createSequentialGroup()
                 .addGap(31, 31, 31)
                 .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(184, 184, 184)
+                .addGap(252, 252, 252)
                 .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 192, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 353, Short.MAX_VALUE)
                 .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(42, 42, 42))
+            .addGroup(lpnlTRLayout.createSequentialGroup()
+                .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(lpnlTRLayout.createSequentialGroup()
+                        .addGap(402, 402, 402)
+                        .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, 567, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(lpnlTRLayout.createSequentialGroup()
+                        .addGap(555, 555, 555)
+                        .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         lpnlTRLayout.setVerticalGroup(
             lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -152,7 +183,11 @@ public class TournamentRounds extends javax.swing.JFrame {
                     .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(638, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(2, 2, 2)
+                .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(575, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -178,6 +213,10 @@ public class TournamentRounds extends javax.swing.JFrame {
         this.dispose();
         new ui.tabbedPanels.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
+
+    private void cBoxRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxRoundActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cBoxRoundActionPerformed
 
     /**
      * @param args the command line arguments
@@ -217,7 +256,9 @@ public class TournamentRounds extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnTournamentTab;
+    private javax.swing.JComboBox<String> cBoxRound;
     private javax.swing.JLabel lblHeading;
+    private javax.swing.JLabel lblHeading1;
     private javax.swing.JLayeredPane lpnlTR;
     // End of variables declaration//GEN-END:variables
 }
