@@ -51,31 +51,82 @@ public class TournamentRounds extends javax.swing.JFrame {
 
         // initialise the matchmaker
         initMatchMaker();
+
+        //progressbar setup
+        pBarRounds.setMaximum(maxRounds);
+        pBarRounds.setMinimum(currRound); // which is one at this stage(defaulted)
+        pBarRounds.setValue(currRound);
+
+        // initialise table
+        String[] roundFields = {"Round Number", "White Player", "Black Player", "Result", "Opening"};
+        MODEL.setColumnIdentifiers(roundFields);
+        tblRounds.setModel(MODEL);
         
-        // set round combo box items
-        
-        for (int i = currRound; i <= maxRounds; i++) {
-            cBoxRound.addItem(i);
-        }
+        //to remove all the netbeans given options(item 1, 2, 3, etc)
+        cBoxRound.removeAllItems();
+
+        // generate first round
+        genRound();
     }
 
-    private void doRound() {
+    private void genRound() {
         if (currRound <= maxRounds) {
             gamesForEachRound.add(mm.generateRound(t));
-
+            
+            addRoundToCBox(currRound);
+            showTableRound(currRound);
+            
             currRound++;
             mm.setRound(currRound);
+            pBarRounds.setValue(currRound - 1); // because the round was increments
+            t.setPlayers(mm.getLeaderBoard()); // leaderboard (order) updated after every round
         } else {
             String s = "Tournament has already reached the maximum amount of rounds. This cannot be changed.";
             System.out.println(s);
-            JOptionPane.showMessageDialog(this, "s");
-            
+            JOptionPane.showMessageDialog(this, s);
+
             HashMap<String, Object> attrs = new HashMap<>();
             attrs.put("has_ended", true);
-            
+
             t = TE.update(t.getId(), attrs);
-            t.setPlayers(mm.getLeaderBoard());
         }
+    }
+
+    private void showTableRound(int round) {
+        int index = round - 1;
+
+        if (gamesForEachRound == null || index < 0 || index >= gamesForEachRound.size()) {
+            return;
+        }
+
+        List<Game> gamesForRound = gamesForEachRound.get(index);
+
+        // Null-safe check (null checked first)
+        if (gamesForRound == null || gamesForRound.isEmpty()) {
+            return;
+        }
+
+        // Reset table
+        MODEL.setRowCount(0);
+
+        for (Game g : gamesForRound) {
+            addGame(g);
+        }
+        cBoxRound.setSelectedIndex(index);
+    }
+
+    private void addGame(Game g) {
+        MODEL.addRow(new Object[]{
+            g.getRound(),
+            getPlayerName(g.getWhite().getId()),
+            getPlayerName(g.getBlack().getId()),
+            g.getResult().getScore() + "(" + g.getResult().name() + ")",
+            g.getOpening()
+        });
+    }
+
+    private void addRoundToCBox(int i) {
+        cBoxRound.addItem(i + "");
     }
 
     private void setRegisteredPlayers() {
@@ -88,11 +139,22 @@ public class TournamentRounds extends javax.swing.JFrame {
                 players.add(PE.mapRow(playerRow));
             }
             t.setPlayers(players);
+            System.out.println("Players set.");
         } else {
             System.out.println("No registered players in this tournament.");
             JOptionPane.showMessageDialog(this, "This tournament does not have enough players.");
         }
 
+    }
+
+    private String getPlayerName(int id) {
+        for (Player p : mm.getLeaderBoard()) {
+            if (p.getId() == id) {
+                return p.getFullName();
+            }
+        }
+
+        return "Unavailable";
     }
 
     private void initMatchMaker() {
@@ -114,6 +176,10 @@ public class TournamentRounds extends javax.swing.JFrame {
         lblHeading = new javax.swing.JLabel();
         cBoxRound = new javax.swing.JComboBox<>();
         lblHeading1 = new javax.swing.JLabel();
+        pBarRounds = new javax.swing.JProgressBar();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        tblRounds = new javax.swing.JTable();
+        btnGenRound = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -136,7 +202,7 @@ public class TournamentRounds extends javax.swing.JFrame {
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
-        cBoxRound.setModel(new javax.swing.DefaultComboBoxModel<>(new int[] {}));
+        cBoxRound.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
         cBoxRound.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cBoxRoundActionPerformed(evt);
@@ -147,11 +213,34 @@ public class TournamentRounds extends javax.swing.JFrame {
         lblHeading1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblHeading1.setText("Select Round.");
 
+        tblRounds.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        jScrollPane1.setViewportView(tblRounds);
+
+        btnGenRound.setText("Generate Next Round");
+        btnGenRound.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGenRoundActionPerformed(evt);
+            }
+        });
+
         lpnlTR.setLayer(btnHomeTab, javax.swing.JLayeredPane.DEFAULT_LAYER);
         lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTR.setLayer(lblHeading, javax.swing.JLayeredPane.DEFAULT_LAYER);
         lpnlTR.setLayer(cBoxRound, javax.swing.JLayeredPane.DEFAULT_LAYER);
         lpnlTR.setLayer(lblHeading1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        lpnlTR.setLayer(pBarRounds, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        lpnlTR.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        lpnlTR.setLayer(btnGenRound, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout lpnlTRLayout = new javax.swing.GroupLayout(lpnlTR);
         lpnlTR.setLayout(lpnlTRLayout);
@@ -162,18 +251,28 @@ public class TournamentRounds extends javax.swing.JFrame {
                 .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(252, 252, 252)
                 .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 353, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(42, 42, 42))
             .addGroup(lpnlTRLayout.createSequentialGroup()
                 .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(lpnlTRLayout.createSequentialGroup()
-                        .addGap(402, 402, 402)
-                        .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, 567, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(89, 89, 89)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1180, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(lpnlTRLayout.createSequentialGroup()
-                        .addGap(555, 555, 555)
-                        .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(lpnlTRLayout.createSequentialGroup()
+                                .addGap(462, 462, 462)
+                                .addComponent(pBarRounds, javax.swing.GroupLayout.PREFERRED_SIZE, 451, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(lpnlTRLayout.createSequentialGroup()
+                                .addGap(402, 402, 402)
+                                .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, 567, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(lpnlTRLayout.createSequentialGroup()
+                                .addGap(555, 555, 555)
+                                .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(72, 72, 72)
+                        .addComponent(btnGenRound, javax.swing.GroupLayout.PREFERRED_SIZE, 313, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(213, Short.MAX_VALUE))
         );
         lpnlTRLayout.setVerticalGroup(
             lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -186,8 +285,15 @@ public class TournamentRounds extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(2, 2, 2)
-                .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(575, Short.MAX_VALUE))
+                .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(lpnlTRLayout.createSequentialGroup()
+                        .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(pBarRounds, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(btnGenRound, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(79, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -215,8 +321,12 @@ public class TournamentRounds extends javax.swing.JFrame {
     }//GEN-LAST:event_btnTournamentTabActionPerformed
 
     private void cBoxRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxRoundActionPerformed
-        // TODO add your handling code here:
+        showTableRound(Integer.parseInt(cBoxRound.getSelectedItem().toString()));
     }//GEN-LAST:event_cBoxRoundActionPerformed
+
+    private void btnGenRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenRoundActionPerformed
+        genRound();
+    }//GEN-LAST:event_btnGenRoundActionPerformed
 
     /**
      * @param args the command line arguments
@@ -254,11 +364,15 @@ public class TournamentRounds extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnGenRound;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnTournamentTab;
     private javax.swing.JComboBox<String> cBoxRound;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblHeading;
     private javax.swing.JLabel lblHeading1;
     private javax.swing.JLayeredPane lpnlTR;
+    private javax.swing.JProgressBar pBarRounds;
+    private javax.swing.JTable tblRounds;
     // End of variables declaration//GEN-END:variables
 }

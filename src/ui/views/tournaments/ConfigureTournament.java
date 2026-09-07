@@ -62,7 +62,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
         tblPlayers = new javax.swing.JTable();
         lblHeading1 = new javax.swing.JLabel();
         btnGPlayer = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
+        btnSubmit = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -114,10 +114,10 @@ public class ConfigureTournament extends javax.swing.JFrame {
             }
         });
 
-        jButton1.setText("Go to Tournament Rounds");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnSubmit.setText("Go to Tournament Rounds");
+        btnSubmit.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnSubmitActionPerformed(evt);
             }
         });
 
@@ -144,7 +144,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
                                 .addGap(128, 128, 128)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(btnGPlayer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 219, Short.MAX_VALUE))))
+                                    .addComponent(btnSubmit, javax.swing.GroupLayout.DEFAULT_SIZE, 219, Short.MAX_VALUE))))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jScrollPane1)))
                 .addGap(52, 52, 52))
@@ -181,7 +181,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
                         .addGap(39, 39, 39)
                         .addComponent(btnGPlayer, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(300, 300, 300)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(134, 134, 134))))
         );
 
@@ -204,14 +204,14 @@ public class ConfigureTournament extends javax.swing.JFrame {
         System.out.println("Added a player to the tournament.");
     }//GEN-LAST:event_btnGPlayerActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        if(t.getPlayers().size() > 2){
+    private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
+        if(tblPlayers.getRowCount() > 2){
             this.dispose();
             new TournamentRounds(t).setVisible(true);
         } else {
             JOptionPane.showMessageDialog(null, "Your tournament has to have at least 2 players");
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_btnSubmitActionPerformed
 
     private void addPlayer() {
         Player p = Player.generatePlayer();
@@ -275,8 +275,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGPlayer;
     private javax.swing.JButton btnHomeTab;
+    private javax.swing.JButton btnSubmit;
     private javax.swing.JButton btnTournamentTab;
-    private javax.swing.JButton jButton1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblHeading;
     private javax.swing.JLabel lblHeading1;
