@@ -29,10 +29,13 @@ public class TournamentRounds extends javax.swing.JFrame {
     private final PlayerEntity PE = new PlayerEntity();
     private final GameEntity GE = new GameEntity();
     private Tournament t;
-    private final DefaultTableModel MODEL = new DefaultTableModel();
+    private final DefaultTableModel MODEL_ROUNDS = new DefaultTableModel(),
+                                    MODEL_LEADERBOARD = new DefaultTableModel();
     private MatchMaker mm;
     private int currRound = 1, maxRounds;
     private List<List<Game>> gamesForEachRound = new ArrayList<>(new ArrayList<>());
+    private boolean hasEnded = false;
+    
 
     /**
      * Creates new form TournamentRounds
@@ -57,10 +60,15 @@ public class TournamentRounds extends javax.swing.JFrame {
         pBarRounds.setMinimum(currRound); // which is one at this stage(defaulted)
         pBarRounds.setValue(currRound);
 
-        // initialise table
+        // initialise tables
         String[] roundFields = {"Round Number", "White Player", "Black Player", "Result", "Opening"};
-        MODEL.setColumnIdentifiers(roundFields);
-        tblRounds.setModel(MODEL);
+        MODEL_ROUNDS.setColumnIdentifiers(roundFields);
+        tblRounds.setModel(MODEL_ROUNDS);
+        
+        String[] leaderboardFields = {"Rank", "Full Name", "Federation", "Rating",
+                                      "Score", "Tiebreak"};
+        MODEL_LEADERBOARD.setColumnIdentifiers(leaderboardFields);
+        tblLeaderboard.setModel(MODEL_LEADERBOARD);
         
         //to remove all the netbeans given options(item 1, 2, 3, etc)
         cBoxRound.removeAllItems();
@@ -71,15 +79,23 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     private void genRound() {
         if (currRound <= maxRounds) {
-            gamesForEachRound.add(mm.generateRound(t));
+            List<Game> games = mm.generateRound(t);
+            gamesForEachRound.add(games);
             
-            addRoundToCBox(currRound);
+            for(Game g : games){
+                if(!GE.insert(g)){
+                    System.out.println("failed to insert game in round: " + currRound);
+                }
+            }
+            
+            cBoxRound.addItem(currRound + "");;
             showTableRound(currRound);
+            setLeaderBoard(currRound);
+            pBarRounds.setValue(currRound); 
+            updateRoundCompletion(currRound); // updates the percentage of the rounds completed
             
-            currRound++;
-            mm.setRound(currRound);
-            pBarRounds.setValue(currRound - 1); // because the round was increments
-            t.setPlayers(mm.getLeaderBoard()); // leaderboard (order) updated after every round
+            currRound++; // increments round to prepare for then next one
+            mm.setRound(currRound); // sets the next round of the matchmaker
         } else {
             String s = "Tournament has already reached the maximum amount of rounds. This cannot be changed.";
             System.out.println(s);
@@ -87,6 +103,7 @@ public class TournamentRounds extends javax.swing.JFrame {
 
             HashMap<String, Object> attrs = new HashMap<>();
             attrs.put("has_ended", true);
+            hasEnded = true;
 
             t = TE.update(t.getId(), attrs);
         }
@@ -107,16 +124,23 @@ public class TournamentRounds extends javax.swing.JFrame {
         }
 
         // Reset table
-        MODEL.setRowCount(0);
+        MODEL_ROUNDS.setRowCount(0);
 
         for (Game g : gamesForRound) {
             addGame(g);
         }
         cBoxRound.setSelectedIndex(index);
+        
+        
+    }
+    
+    private void updateRoundCompletion(int roundNum){
+        double percentage = (double) roundNum / (double) maxRounds * 100;
+        lblRoundCompletion.setText(String.format("%.2f", percentage) + "%"); //format confused actual percentage symbol as a placeholder
     }
 
     private void addGame(Game g) {
-        MODEL.addRow(new Object[]{
+        MODEL_ROUNDS.addRow(new Object[]{
             g.getRound(),
             getPlayerName(g.getWhite().getId()),
             getPlayerName(g.getBlack().getId()),
@@ -124,11 +148,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             g.getOpening()
         });
     }
-
-    private void addRoundToCBox(int i) {
-        cBoxRound.addItem(i + "");
-    }
-
+    
     private void setRegisteredPlayers() {
         List<Player> players = new ArrayList<>();
 
@@ -148,7 +168,7 @@ public class TournamentRounds extends javax.swing.JFrame {
     }
 
     private String getPlayerName(int id) {
-        for (Player p : mm.getLeaderBoard()) {
+        for (Player p : t.getPlayers()) {
             if (p.getId() == id) {
                 return p.getFullName();
             }
@@ -160,6 +180,28 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void initMatchMaker() {
         mm = new MatchMaker(t.getPlayers(), currRound);
     }
+    
+    private void setLeaderBoard(int round){
+        MODEL_LEADERBOARD.setRowCount(0);
+        
+        int rank = 1;
+        for(Player p : mm.getLeaderboardForRound(round)){
+            addToLeaderboard(p, rank);
+            rank++;
+        }
+    }
+    
+    private void addToLeaderboard(Player p, int rank){
+        MODEL_LEADERBOARD.addRow(new Object[]{
+            rank,
+            p.getFullName(),
+            p.getFederation(),
+            p.getRating(),
+            p.getScore(),
+            p.getTieBreak()
+        });
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -175,11 +217,16 @@ public class TournamentRounds extends javax.swing.JFrame {
         btnTournamentTab = new javax.swing.JButton();
         lblHeading = new javax.swing.JLabel();
         cBoxRound = new javax.swing.JComboBox<>();
-        lblHeading1 = new javax.swing.JLabel();
+        lblRoundHeading = new javax.swing.JLabel();
         pBarRounds = new javax.swing.JProgressBar();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblRounds = new javax.swing.JTable();
         btnGenRound = new javax.swing.JButton();
+        btnSeeFinal = new javax.swing.JButton();
+        lblRoundCompletion = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tblLeaderboard = new javax.swing.JTable();
+        lblRoundCompletion1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -190,6 +237,8 @@ public class TournamentRounds extends javax.swing.JFrame {
                 btnHomeTabActionPerformed(evt);
             }
         });
+        lpnlTR.add(btnHomeTab);
+        btnHomeTab.setBounds(31, 29, 230, 40);
 
         btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnTournamentTab.setText("Tournaments");
@@ -198,9 +247,14 @@ public class TournamentRounds extends javax.swing.JFrame {
                 btnTournamentTabActionPerformed(evt);
             }
         });
+        lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTR.add(btnTournamentTab);
+        btnTournamentTab.setBounds(1080, 30, 230, 40);
 
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lpnlTR.add(lblHeading);
+        lblHeading.setBounds(470, 30, 429, 40);
 
         cBoxRound.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
         cBoxRound.addActionListener(new java.awt.event.ActionListener() {
@@ -208,10 +262,16 @@ public class TournamentRounds extends javax.swing.JFrame {
                 cBoxRoundActionPerformed(evt);
             }
         });
+        lpnlTR.add(cBoxRound);
+        cBoxRound.setBounds(490, 110, 360, 22);
 
-        lblHeading1.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
-        lblHeading1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblHeading1.setText("Select Round.");
+        lblRoundHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
+        lblRoundHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblRoundHeading.setText("Select Round.");
+        lpnlTR.add(lblRoundHeading);
+        lblRoundHeading.setBounds(550, 80, 239, 30);
+        lpnlTR.add(pBarRounds);
+        pBarRounds.setBounds(31, 159, 510, 26);
 
         tblRounds.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -226,75 +286,54 @@ public class TournamentRounds extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(tblRounds);
 
+        lpnlTR.add(jScrollPane1);
+        jScrollPane1.setBounds(31, 191, 610, 402);
+
         btnGenRound.setText("Generate Next Round");
         btnGenRound.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnGenRoundActionPerformed(evt);
             }
         });
+        lpnlTR.add(btnGenRound);
+        btnGenRound.setBounds(1080, 110, 210, 31);
 
-        lpnlTR.setLayer(btnHomeTab, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
-        lpnlTR.setLayer(lblHeading, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(cBoxRound, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(lblHeading1, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(pBarRounds, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(jScrollPane1, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlTR.setLayer(btnGenRound, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        btnSeeFinal.setText("See Final Stats");
+        btnSeeFinal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSeeFinalActionPerformed(evt);
+            }
+        });
+        lpnlTR.add(btnSeeFinal);
+        btnSeeFinal.setBounds(1080, 150, 210, 30);
 
-        javax.swing.GroupLayout lpnlTRLayout = new javax.swing.GroupLayout(lpnlTR);
-        lpnlTR.setLayout(lpnlTRLayout);
-        lpnlTRLayout.setHorizontalGroup(
-            lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(lpnlTRLayout.createSequentialGroup()
-                .addGap(31, 31, 31)
-                .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(252, 252, 252)
-                .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(42, 42, 42))
-            .addGroup(lpnlTRLayout.createSequentialGroup()
-                .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(lpnlTRLayout.createSequentialGroup()
-                        .addGap(89, 89, 89)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1180, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(lpnlTRLayout.createSequentialGroup()
-                        .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(lpnlTRLayout.createSequentialGroup()
-                                .addGap(462, 462, 462)
-                                .addComponent(pBarRounds, javax.swing.GroupLayout.PREFERRED_SIZE, 451, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(lpnlTRLayout.createSequentialGroup()
-                                .addGap(402, 402, 402)
-                                .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, 567, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(lpnlTRLayout.createSequentialGroup()
-                                .addGap(555, 555, 555)
-                                .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 239, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(72, 72, 72)
-                        .addComponent(btnGenRound, javax.swing.GroupLayout.PREFERRED_SIZE, 313, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(213, Short.MAX_VALUE))
-        );
-        lpnlTRLayout.setVerticalGroup(
-            lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(lpnlTRLayout.createSequentialGroup()
-                .addGap(29, 29, 29)
-                .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
-                .addGroup(lpnlTRLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(lpnlTRLayout.createSequentialGroup()
-                        .addComponent(cBoxRound, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(pBarRounds, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(btnGenRound, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(79, Short.MAX_VALUE))
-        );
+        lblRoundCompletion.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
+        lblRoundCompletion.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblRoundCompletion.setText("0%");
+        lpnlTR.add(lblRoundCompletion);
+        lblRoundCompletion.setBounds(540, 160, 101, 26);
+
+        tblLeaderboard.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        jScrollPane2.setViewportView(tblLeaderboard);
+
+        lpnlTR.add(jScrollPane2);
+        jScrollPane2.setBounds(680, 190, 622, 402);
+
+        lblRoundCompletion1.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
+        lblRoundCompletion1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblRoundCompletion1.setText("Round Leaderboard");
+        lpnlTR.add(lblRoundCompletion1);
+        lblRoundCompletion1.setBounds(680, 160, 200, 26);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -310,23 +349,36 @@ public class TournamentRounds extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed
+    private void btnSeeFinalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSeeFinalActionPerformed
+        if(!hasEnded){
+            JOptionPane.showMessageDialog(null, "Tournament has not ended. Please Simulate all the rounds.");
+            return;
+        }
+
+        t.setPlayers(mm.getLeaderboardForRound(currRound)); // already sorted leaderboard
+
         this.dispose();
-        new ui.Main().setVisible(true);
-    }//GEN-LAST:event_btnHomeTabActionPerformed
+        new ViewTournament(t).setVisible(true);
+    }//GEN-LAST:event_btnSeeFinalActionPerformed
+
+    private void btnGenRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenRoundActionPerformed
+        genRound();
+    }//GEN-LAST:event_btnGenRoundActionPerformed
+
+    private void cBoxRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxRoundActionPerformed
+        showTableRound(Integer.parseInt(cBoxRound.getSelectedItem().toString()));
+        setLeaderBoard(Integer.parseInt(cBoxRound.getSelectedItem().toString()));
+    }//GEN-LAST:event_cBoxRoundActionPerformed
 
     private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
         this.dispose();
         new ui.tabbedPanels.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
 
-    private void cBoxRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cBoxRoundActionPerformed
-        showTableRound(Integer.parseInt(cBoxRound.getSelectedItem().toString()));
-    }//GEN-LAST:event_cBoxRoundActionPerformed
-
-    private void btnGenRoundActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenRoundActionPerformed
-        genRound();
-    }//GEN-LAST:event_btnGenRoundActionPerformed
+    private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed
+        this.dispose();
+        new ui.Main().setVisible(true);
+    }//GEN-LAST:event_btnHomeTabActionPerformed
 
     /**
      * @param args the command line arguments
@@ -366,13 +418,18 @@ public class TournamentRounds extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGenRound;
     private javax.swing.JButton btnHomeTab;
+    private javax.swing.JButton btnSeeFinal;
     private javax.swing.JButton btnTournamentTab;
     private javax.swing.JComboBox<String> cBoxRound;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JLabel lblHeading;
-    private javax.swing.JLabel lblHeading1;
+    private javax.swing.JLabel lblRoundCompletion;
+    private javax.swing.JLabel lblRoundCompletion1;
+    private javax.swing.JLabel lblRoundHeading;
     private javax.swing.JLayeredPane lpnlTR;
     private javax.swing.JProgressBar pBarRounds;
+    private javax.swing.JTable tblLeaderboard;
     private javax.swing.JTable tblRounds;
     // End of variables declaration//GEN-END:variables
 }

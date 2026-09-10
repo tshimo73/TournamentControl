@@ -65,6 +65,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
         btnSubmit = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(null);
 
         btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnHomeTab.setText("Home");
@@ -73,6 +74,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
                 btnHomeTabActionPerformed(evt);
             }
         });
+        getContentPane().add(btnHomeTab);
+        btnHomeTab.setBounds(50, 37, 230, 40);
 
         btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnTournamentTab.setText("Tournaments");
@@ -81,15 +84,26 @@ public class ConfigureTournament extends javax.swing.JFrame {
                 btnTournamentTabActionPerformed(evt);
             }
         });
+        getContentPane().add(btnTournamentTab);
+        btnTournamentTab.setBounds(1156, 37, 230, 40);
 
         lblNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblNumPlayers.setText("Number of Players:");
+        getContentPane().add(lblNumPlayers);
+        lblNumPlayers.setBounds(50, 126, 250, 30);
 
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblHeading.setText("Configure Tournament");
+        getContentPane().add(lblHeading);
+        lblHeading.setBounds(500, 25, 429, 40);
 
         txfNumPlayers.setEditable(false);
+        txfNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
+        txfNumPlayers.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txfNumPlayers.setText("0");
+        getContentPane().add(txfNumPlayers);
+        txfNumPlayers.setBounds(276, 113, 90, 50);
 
         tblPlayers.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -103,9 +117,14 @@ public class ConfigureTournament extends javax.swing.JFrame {
         jScrollPane1.setViewportView(tblPlayers);
         tblPlayers.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
+        getContentPane().add(jScrollPane1);
+        jScrollPane1.setBounds(561, 117, 825, 523);
+
         lblHeading1.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 12)); // NOI18N
         lblHeading1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblHeading1.setText("Tournament Players");
+        getContentPane().add(lblHeading1);
+        lblHeading1.setBounds(879, 83, 230, 28);
 
         btnGPlayer.setText("Generate Player");
         btnGPlayer.addActionListener(new java.awt.event.ActionListener() {
@@ -113,6 +132,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
                 btnGPlayerActionPerformed(evt);
             }
         });
+        getContentPane().add(btnGPlayer);
+        btnGPlayer.setBounds(178, 195, 219, 36);
 
         btnSubmit.setText("Go to Tournament Rounds");
         btnSubmit.addActionListener(new java.awt.event.ActionListener() {
@@ -120,70 +141,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
                 btnSubmitActionPerformed(evt);
             }
         });
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(50, 50, 50)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(220, 220, 220)
-                        .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 227, Short.MAX_VALUE)
-                        .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(lblNumPlayers, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txfNumPlayers, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(128, 128, 128)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(btnGPlayer, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(btnSubmit, javax.swing.GroupLayout.DEFAULT_SIZE, 219, Short.MAX_VALUE))))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane1)))
-                .addGap(52, 52, 52))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(329, 329, 329))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(37, 37, 37)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(34, 34, 34))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(lblHeading1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(6, 6, 6)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 523, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(15, 15, 15)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(lblNumPlayers, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(txfNumPlayers))
-                        .addGap(39, 39, 39)
-                        .addComponent(btnGPlayer, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(300, 300, 300)
-                        .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(134, 134, 134))))
-        );
+        getContentPane().add(btnSubmit);
+        btnSubmit.setBounds(178, 531, 219, 42);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents

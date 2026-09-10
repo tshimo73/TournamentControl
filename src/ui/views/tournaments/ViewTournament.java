@@ -1,18 +1,28 @@
 package ui.views.tournaments;
 
+import database.DatabaseManager;
 import entities.TournamentEntity;
+import enums.GameResult;
 import filing.importer.Importer;
 import games.Game;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jframeconfig.Config;
 import players.Player;
 import tournaments.*;
+import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.table.DefaultTableModel;
 
 public class ViewTournament extends javax.swing.JFrame {
 
     private final Tournament t;
-    private final Config cf = new Config();
     private Importer importer;
+    private final TournamentEntity TE = new TournamentEntity();
+    private final DefaultTableModel MODEL = new DefaultTableModel();
 
     /**
      * Creates new form ViewTournaments
@@ -22,72 +32,163 @@ public class ViewTournament extends javax.swing.JFrame {
     public ViewTournament(Tournament tournament) {
         initComponents();
         this.t = tournament;
+
+        Config.setAttributes(this, tournament.getName());
+        lblHeading.setText(t.getName() + "(Rounds: " + t.getRounds() + ")");
+
+        setTournamentStats();
         
-        cf.setAttributes(this, tournament.getName());
-        lblHeading.setText(t.getName());
-
-        // if the tournament is imported, then create the save button,
-        // and set the tournament stats lbls since you don't need to
-        // get the games from the database
-        if (t.getIsImported()) {
-            setTournamentStats();
-
-            javax.swing.JButton btnSave = btnViewGames;
-            btnSave.setSize(WIDTH, HEIGHT);
-            btnSave.setText("Save To Database");
-            btnSave.setLocation(btnViewGames.getX(), btnViewGames.getY() - 1000);
-            btnSave.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18));
-            btnSave.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-
-            btnSave.addActionListener((java.awt.event.ActionEvent evt) -> {
-                btnSaveActionPerformed(evt, btnSave);
-            });
-
-        } else {
-            t.setGamesFromDB();
-            setTournamentStats();
-        }
+        // leaderboard table
+        String[] fields = {"Rank", "Full Name", "FIDE ID", "Rating", "Federation", 
+                           "Score", "Tiebreak", "Wins", "Draws", "Losses"};
+        MODEL.setColumnIdentifiers(fields);
+        tblLeaderboard.setModel(MODEL);
+        getLeaderboard();
+        
     }
 
     public void setTournamentStats() {
-        List<Game> games = t.getGames();
-        List<Player> players = t.getLeaderBoard();
 
-        int numGames = games.size(), numPlayers = players.size(),
-                numNoDraws = 0, numDraws = 0;
-        double drawPercentage, aveRating, sumRating = 0;
+        try {
+            int numGames = 0, numPlayers = 0,
+                    numWWins = 0, numBWins = 0, numDraws = 0;
+            double drawPercentage = 0.0, aveRating = 0.0;
+            Statement stmt = DatabaseManager.getConn().createStatement();
 
-        if (numGames == 0) {
-            lblAverageRating.setText("Not Available");
-            lblDrawPercentage.setText("Not Available");
-            lblNumPlayers.setText("Not Available");
-            lblTotalGames.setText("No Games were found");
-            lblNumNoDraws.setText("Not Available");
+            // necesary sql queries
+            String sqlGames = String.format("SELECT result, count(result) AS [NumGames]"
+                    + " FROM tblGames"
+                    + " WHERE tournament_id = \"%s\""
+                    + " GROUP BY result", t.getId()),
+                    sqlPlayers = String.format("SELECT count(id) AS [NumPlayers], ROUND(AVG(rating), 2) AS [AvgRating]"
+                            + " FROM tblRegistrations"
+                            + " WHERE tournament_id = \"%s\"", t.getId());
+
+            ResultSet rsGames = stmt.executeQuery(sqlGames), rsPlayers = stmt.executeQuery(sqlPlayers);
+
+            // the game query
+            while (rsGames.next()) {
+                String result = rsGames.getString("result");
+                int wins = rsGames.getInt("NumGames");
+
+                switch (result) {
+                    case "1-0":
+                        numWWins = wins;
+                        break;
+
+                    case "0-1":
+                        numBWins = wins;
+                        break;
+
+                    case "0.5-0.5":
+                        numDraws = wins;
+                        break;
+
+                }
+            }
+            numGames = numWWins + numBWins + numDraws;
+            drawPercentage = numGames > 0 ? ((double) numDraws / (double) numGames) * 100.0 : 0.0; // had to do an if statement, got NaN error (case divided by 0)
+
+            // players qery
+            if (rsPlayers.next()) {
+                numPlayers = rsPlayers.getInt("NumPlayers");
+                aveRating = rsPlayers.getDouble("AvgRating");
+            }
+
+            // Set the stats
+            lblAverageRating.setText(String.format("Average Rating: %.2f", aveRating));
+            lblDrawPercentage.setText(String.format("Draw Percentage: %.2f%%", drawPercentage));
+            lblNumPlayers.setText(String.format("Number of Players: %d", numPlayers));
+            lblTotalGames.setText(String.format("Total Games: %d", numGames));
+            lblNumNoDraws.setText(String.format("Number of Decisive Games: %d", numWWins + numBWins));
+        } catch (SQLException ex) {
+            Logger.getLogger(ViewTournament.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setGamesFromDB() {
+        if (t.getIsImported()) {
             return;
         }
+        System.out.println("Seeding tournament with games from Database...");
+        List<Game> gs = TE.getGames(t.getId());
 
-        for (Game g : games) {
-            if (g.isDraw()) {
-                numDraws++;
-            }
+        if (!gs.isEmpty()) {
+            t.setGames(gs);
+            System.out.printf("%d games found and added!", gs.size());
+        } else {
+            System.out.println("No games were found for this tournament");
         }
 
-        numNoDraws = numGames - numDraws;
-        drawPercentage = Double.parseDouble(String.format("%.2f", (double) (numDraws / numGames * 100)));
-
-        for (Player p : players) {
-            sumRating += p.getRating();
-        }
-
-        aveRating = Double.parseDouble(String.format("%.2f", (double) (sumRating / numPlayers)));
-
-        // Set the stats
-        lblAverageRating.setText(String.format("Average Rating: %.2f", aveRating));
-        lblDrawPercentage.setText(String.format("Draw Percentage: %.2f%%", drawPercentage));
-        lblNumPlayers.setText(String.format("Number of Players: %d", numPlayers));
-        lblTotalGames.setText(String.format("Total Games: %d", numGames));
-        lblNumNoDraws.setText(String.format("Number of Decisive Games: %d", numNoDraws));
     }
+
+    /**
+     * Gets the top 20 (if theres more than 20) players in the tournament
+     *
+     * @param topX
+     */
+    private void getLeaderboard() {
+        try {
+            // used embedded queries because i had two player id fields so creating
+            // the link was a hassle. embeddeds was easy
+            Statement stmt = DatabaseManager.getConn().createStatement();
+            String sql = String.format("SELECT TOP 20 first_name & \" \" & last_name AS [FullName], "
+                    + "fide_id, rating, federation, score, tiebreak, "
+                    
+                    // win embedded query
+                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
+                    + "AND ("
+                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + ")) AS [Wins], "
+                    
+                    // draw embedded
+                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
+                    + "AND ("
+                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + ")) AS [Draws], "
+                    
+                    // loss embedded
+                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
+                    + "AND ("
+                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + ")) AS [Losses] "
+                    
+                    // rest of the query
+                    + "FROM tblRegistrations WHERE tournament_id = \"%s\" "
+                    + "ORDER BY score DESC, tiebreak DESC",
+                    t.getId(), GameResult.WHITE_WIN.getScore(), GameResult.BLACK_WIN.getScore(), // win vars
+                    t.getId(), GameResult.DRAW.getScore(), GameResult.DRAW.getScore(), // draw vars
+                    t.getId(), GameResult.BLACK_WIN.getScore(), GameResult.WHITE_WIN.getScore(), // loss vars
+                    t.getId()); // for the final where clause
+
+            ResultSet rs = stmt.executeQuery(sql);
+
+            int rank = 1;
+            while (rs.next()) {
+                MODEL.addRow(new Object[]{
+                    rank,
+                    rs.getString("FullName"),
+                    rs.getString("fide_id"),
+                    rs.getDouble("rating"),
+                    rs.getString("federation"),
+                    rs.getDouble("score"),
+                    rs.getDouble("tiebreak"),
+                    rs.getInt("Wins"),
+                    rs.getInt("Draws"),
+                    rs.getInt("Losses")
+                });
+                rank++;
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Failed to get leaderboard");
+            Logger.getLogger(ViewTournament.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -103,19 +204,22 @@ public class ViewTournament extends javax.swing.JFrame {
         btnHomeTab = new javax.swing.JButton();
         btnTournamentTab = new javax.swing.JButton();
         lblHeading = new javax.swing.JLabel();
-        btnViewGames = new javax.swing.JButton();
         lblStats = new javax.swing.JLabel();
         lblNumPlayers = new javax.swing.JLabel();
         lblTotalGames = new javax.swing.JLabel();
         lblNumNoDraws = new javax.swing.JLabel();
         lblDrawPercentage = new javax.swing.JLabel();
         lblAverageRating = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        tblLeaderboard = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         lblPOTT.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18)); // NOI18N
         lblPOTT.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblPOTT.setText("Player of the Tournament");
+        lblPOTT.setText("Leaderboard");
+        lpnlVT.add(lblPOTT);
+        lblPOTT.setBounds(502, 88, 288, 37);
 
         btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnHomeTab.setText("Home");
@@ -124,6 +228,9 @@ public class ViewTournament extends javax.swing.JFrame {
                 btnHomeTabActionPerformed(evt);
             }
         });
+        lpnlVT.setLayer(btnHomeTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlVT.add(btnHomeTab);
+        btnHomeTab.setBounds(54, 16, 230, 40);
 
         btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnTournamentTab.setText("Tournaments");
@@ -132,110 +239,66 @@ public class ViewTournament extends javax.swing.JFrame {
                 btnTournamentTabActionPerformed(evt);
             }
         });
+        lpnlVT.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlVT.add(btnTournamentTab);
+        btnTournamentTab.setBounds(1096, 16, 230, 40);
 
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-
-        btnViewGames.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
-        btnViewGames.setText("View Games");
-        btnViewGames.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnViewGamesActionPerformed(evt);
-            }
-        });
+        lpnlVT.add(lblHeading);
+        lblHeading.setBounds(296, 16, 749, 37);
 
         lblStats.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18)); // NOI18N
         lblStats.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblStats.setText("Statistics");
+        lpnlVT.add(lblStats);
+        lblStats.setBounds(40, 88, 288, 37);
 
         lblNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 14)); // NOI18N
         lblNumPlayers.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblNumPlayers.setText("Statistics");
+        lpnlVT.add(lblNumPlayers);
+        lblNumPlayers.setBounds(40, 154, 371, 37);
 
         lblTotalGames.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 14)); // NOI18N
         lblTotalGames.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblTotalGames.setText("Statistics");
+        lpnlVT.add(lblTotalGames);
+        lblTotalGames.setBounds(40, 220, 371, 37);
 
         lblNumNoDraws.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 14)); // NOI18N
         lblNumNoDraws.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblNumNoDraws.setText("Statistics");
+        lpnlVT.add(lblNumNoDraws);
+        lblNumNoDraws.setBounds(40, 286, 371, 37);
 
         lblDrawPercentage.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 14)); // NOI18N
         lblDrawPercentage.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblDrawPercentage.setText("Statistics");
+        lpnlVT.add(lblDrawPercentage);
+        lblDrawPercentage.setBounds(40, 352, 371, 37);
 
         lblAverageRating.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 14)); // NOI18N
         lblAverageRating.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         lblAverageRating.setText("Statistics");
+        lpnlVT.add(lblAverageRating);
+        lblAverageRating.setBounds(40, 418, 371, 37);
 
-        lpnlVT.setLayer(lblPOTT, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(btnHomeTab, javax.swing.JLayeredPane.PALETTE_LAYER);
-        lpnlVT.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
-        lpnlVT.setLayer(lblHeading, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(btnViewGames, javax.swing.JLayeredPane.PALETTE_LAYER);
-        lpnlVT.setLayer(lblStats, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(lblNumPlayers, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(lblTotalGames, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(lblNumNoDraws, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(lblDrawPercentage, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        lpnlVT.setLayer(lblAverageRating, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        tblLeaderboard.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        jScrollPane1.setViewportView(tblLeaderboard);
 
-        javax.swing.GroupLayout lpnlVTLayout = new javax.swing.GroupLayout(lpnlVT);
-        lpnlVT.setLayout(lpnlVTLayout);
-        lpnlVTLayout.setHorizontalGroup(
-            lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, lpnlVTLayout.createSequentialGroup()
-                .addGroup(lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(lpnlVTLayout.createSequentialGroup()
-                        .addGap(54, 54, 54)
-                        .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 749, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(lpnlVTLayout.createSequentialGroup()
-                        .addGap(40, 40, 40)
-                        .addComponent(lblStats, javax.swing.GroupLayout.PREFERRED_SIZE, 288, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 224, Short.MAX_VALUE)
-                        .addComponent(btnViewGames, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(217, 217, 217)
-                        .addComponent(lblPOTT, javax.swing.GroupLayout.PREFERRED_SIZE, 288, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, lpnlVTLayout.createSequentialGroup()
-                        .addGap(40, 40, 40)
-                        .addGroup(lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(lblNumPlayers, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 371, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblTotalGames, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 371, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblNumNoDraws, javax.swing.GroupLayout.PREFERRED_SIZE, 371, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblDrawPercentage, javax.swing.GroupLayout.PREFERRED_SIZE, 371, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(lblAverageRating, javax.swing.GroupLayout.PREFERRED_SIZE, 371, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addGap(56, 56, 56))
-        );
-        lpnlVTLayout.setVerticalGroup(
-            lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(lpnlVTLayout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addGroup(lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnHomeTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnTournamentTab, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblHeading, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(29, 29, 29)
-                .addGroup(lpnlVTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblPOTT, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnViewGames, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblStats, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(29, 29, 29)
-                .addComponent(lblNumPlayers, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addComponent(lblTotalGames, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addComponent(lblNumNoDraws, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addComponent(lblDrawPercentage, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addComponent(lblAverageRating, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(252, Short.MAX_VALUE))
-        );
+        lpnlVT.add(jScrollPane1);
+        jScrollPane1.setBounds(417, 154, 898, 402);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -267,10 +330,6 @@ public class ViewTournament extends javax.swing.JFrame {
         }
     }
 
-
-    private void btnViewGamesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnViewGamesActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btnViewGamesActionPerformed
 
     public void setImporter(Importer im) {
         importer = im;
@@ -314,7 +373,7 @@ public class ViewTournament extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnTournamentTab;
-    private javax.swing.JButton btnViewGames;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblAverageRating;
     private javax.swing.JLabel lblDrawPercentage;
     private javax.swing.JLabel lblHeading;
@@ -324,5 +383,6 @@ public class ViewTournament extends javax.swing.JFrame {
     private javax.swing.JLabel lblStats;
     private javax.swing.JLabel lblTotalGames;
     private javax.swing.JLayeredPane lpnlVT;
+    private javax.swing.JTable tblLeaderboard;
     // End of variables declaration//GEN-END:variables
 }
