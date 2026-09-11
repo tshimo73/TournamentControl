@@ -33,7 +33,7 @@ public class TournamentRounds extends javax.swing.JFrame {
                                     MODEL_LEADERBOARD = new DefaultTableModel();
     private MatchMaker mm;
     private int currRound = 1, maxRounds;
-    private List<List<Game>> gamesForEachRound = new ArrayList<>(new ArrayList<>());
+    private HashMap<Integer, List<Game>> gamesForEachRound = new HashMap<>();
     private boolean hasEnded = false;
     
 
@@ -80,7 +80,7 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void genRound() {
         if (currRound <= maxRounds) {
             List<Game> games = mm.generateRound(t);
-            gamesForEachRound.add(games);
+            gamesForEachRound.put(currRound, games);
             
             for(Game g : games){
                 if(!GE.insert(g)){
@@ -110,13 +110,7 @@ public class TournamentRounds extends javax.swing.JFrame {
     }
 
     private void showTableRound(int round) {
-        int index = round - 1;
-
-        if (gamesForEachRound == null || index < 0 || index >= gamesForEachRound.size()) {
-            return;
-        }
-
-        List<Game> gamesForRound = gamesForEachRound.get(index);
+        List<Game> gamesForRound = gamesForEachRound.get(round);
 
         // Null-safe check (null checked first)
         if (gamesForRound == null || gamesForRound.isEmpty()) {
@@ -129,7 +123,7 @@ public class TournamentRounds extends javax.swing.JFrame {
         for (Game g : gamesForRound) {
             addGame(g);
         }
-        cBoxRound.setSelectedIndex(index);
+        cBoxRound.setSelectedIndex(round - 1);
         
         
     }
