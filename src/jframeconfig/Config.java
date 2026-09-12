@@ -4,6 +4,7 @@
  */
 package jframeconfig;
 
+import java.time.format.DateTimeFormatter;
 import javax.swing.ImageIcon;
 
 /**
@@ -23,6 +24,9 @@ public class Config {
 
     // Tournament Control's Logo
     public static final ImageIcon ICON = new ImageIcon(Config.class.getResource("/images/TC_Logo.png"));
+    
+    // Date Time Format
+    public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //get a specific image
     public static ImageIcon getImage(String imageName) {

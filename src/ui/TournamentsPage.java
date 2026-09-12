@@ -1,4 +1,4 @@
-package ui.tabbedPanels;
+package ui;
 
 import entities.TournamentEntity;
 import filing.InvalidFileExtensionException;
@@ -42,8 +42,8 @@ public class TournamentsPage extends javax.swing.JFrame {
                 t.getDirector(),
                 t.getRounds(),
                 t.getTournamentType().getName(),
-                t.getStartDate(),
-                t.getEndDate()
+                t.getStartDate().format(Config.DTF),
+                t.getEndDate().format(Config.DTF)
             });
         }
         
@@ -137,11 +137,11 @@ public class TournamentsPage extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 1307, Short.MAX_VALUE)
+            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 601, Short.MAX_VALUE)
+            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
         );
 
         pack();

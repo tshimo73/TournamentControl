@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package matchmaking;
 
 import games.*;
@@ -9,20 +5,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.Arrays;
 import players.*;
 import tournaments.Tournament;
-import utils.*;
-
-import java.util.Comparator;
+import entities.PlayerEntity;
 
 public class MatchMaker {
 
     int round = 1;
-    protected List<Player> players; // players
-    private final Map<Player, List<Player>> previousOpponents; // key: player, value: their opponents
-    private final Map<Player, Integer> colourBalance; // +1 white, -1 black (ensures that players do not always play the same colour)
-    private final Map<Player, Boolean> hasRecievedBye; // has the player recieved a BYE?
+    protected List<Player> players;
+    private final Map<Player, List<Player>> previousOpponents;
+    private final Map<Player, Integer> colourBalance;
+    private final Map<Player, Boolean> hasRecievedBye;
+    private final PlayerEntity PE = new PlayerEntity();
+    private HashMap<Integer, List<Player>> leaderboardPerRound = new HashMap<>();
+    private List<Game> games = new ArrayList<>();
 
     public MatchMaker(List<Player> ps, int round) {
         this.players = ps;
@@ -31,7 +27,6 @@ public class MatchMaker {
         this.colourBalance = new HashMap<>();
         this.hasRecievedBye = new HashMap<>();
 
-        // initialise maps for each player
         for (Player p : players) {
             previousOpponents.put(p, new ArrayList<>());
             colourBalance.put(p, 0);
@@ -41,77 +36,174 @@ public class MatchMaker {
 
     /**
      * Generates a Tournament round.
-     *
-     * @param t
-     * @return
      */
     public List<Game> generateRound(Tournament t) {
-        List<List<Player>> scoreGroups = buildScoreGroups();
         List<Game> roundGames = new ArrayList<>();
+        List<Player> availablePlayers = new ArrayList<>(players);
+
+        // 1. A BYE only ever happens if the total player count is ODD!
+        // At most ONE player per round can receive a BYE.
+        if (availablePlayers.size() % 2 != 0) {
+            Player byeCandidate = selectByePlayer(availablePlayers);
+            if (byeCandidate != null) {
+                assignBye(byeCandidate);
+                availablePlayers.remove(byeCandidate);
+            }
+        }
+
+        // 2. Build score groups ONLY from the remaining even pool of players
+        List<List<Player>> scoreGroups = buildScoreGroups(availablePlayers);
         List<Player> leftover = new ArrayList<>();
 
         for (List<Player> group : scoreGroups) {
-            // take previous group left over
+            // Carry down unpaired players from upper score bracket
             group.addAll(0, leftover);
             leftover.clear();
 
-            //if group isnt even, pull lowest player to the next group
-            if (group.size() % 2 != 0) {
-                leftover.add(group.remove(group.size() - 1));
-            }
+            // Pair players within this group and collect anyone who could not be paired
+            List<Player> unpartnered = new ArrayList<>();
+            roundGames.addAll(pairGroup(group, t, unpartnered));
 
-            roundGames.addAll(pairGroup(group, t));
+            // Any leftovers cascade down to the next score bracket
+            leftover.addAll(unpartnered);
         }
 
-        // whoever is left gets a bye
-        if (!leftover.isEmpty()) {
-            assignBye(leftover.get(0));
-        }
-        System.out.println(roundGames);
+        // 3. Fallback: If strict group matching left an unresolved pair, force-pair them
+        while (leftover.size() >= 2) {
+            Player p1 = leftover.remove(0);
+            Player p2 = leftover.remove(0);
+            roundGames.add(createGame(p1, p2, t));
+        } 
+        
+        
+        // my code
+        updateScoresAndTieBreaks();
+        leaderboardPerRound.put(round, getLeaderBoardSnapshot());
+        games.addAll(roundGames);
+
         return roundGames;
     }
 
-    public int getRound() {
-        return round;
-    }
-
-    public void setRound(int round) {
-        this.round = round;
-    }
-
     /**
-     * Builds match making based on score
-     *
-     * @return
+     * Selects the lowest-ranked player who hasn't had a BYE yet.
      */
-    private List<List<Player>> buildScoreGroups() {
-        // sort by score decending, rating desc as tiebreaker
-        Player[] sorted = (Player[]) players.toArray();
+    private Player selectByePlayer(List<Player> candidates) {
+        // Sort ascending (lowest score first)
+        List<Player> sorted = new ArrayList<>(candidates);
+        sorted.sort((p1, p2) -> Double.compare(p1.getScore(), p2.getScore()));
 
-        // manually sorting them (for marks and then converting back to array
-        // lists because i find them easier to use in this project)
+        for (Player p : sorted) {
+            if (!hasRecievedBye.getOrDefault(p, false)) {
+                return p;
+            }
+        }
+        // If everyone somehow had a bye, pick the lowest ranked player
+        return sorted.get(0);
+    }
+
+    private void assignBye(Player p) {
+        // In chess, a BYE gives 1.0 point (win by forfeit/no pairing)
+        p.setScore(p.getScore() + 1.0);
+        hasRecievedBye.put(p, true);
+        System.out.println("Player " + p.getFullName() + " received a BYE for Round " + round);
+    }
+
+    private List<Game> pairGroup(List<Player> group, Tournament t, List<Player> unpartnered) {
+        List<Game> games = new ArrayList<>();
+        List<Player> pool = new ArrayList<>(group);
+
+        while (pool.size() >= 2) {
+            Player a = pool.remove(0);
+            Player bestMatch = null;
+            int bestMatchIndex = -1;
+
+            // Find first player 'a' hasn't played against yet
+            for (int j = 0; j < pool.size(); j++) {
+                Player candidate = pool.get(j);
+                if (!hasPlayed(a, candidate)) {
+                    bestMatch = candidate;
+                    bestMatchIndex = j;
+                    break;
+                }
+            }
+
+            // If no unique opponent found in group, pair with the next available
+            if (bestMatch == null) {
+                // If this is the only pair left, accept rematch or mark for cascade
+                if (pool.size() == 1) {
+                    bestMatch = pool.get(0);
+                    bestMatchIndex = 0;
+                } else {
+                    // Send player 'a' to cascade down to the next bracket
+                    unpartnered.add(a);
+                    continue;
+                }
+            }
+
+            pool.remove(bestMatchIndex);
+            games.add(createGame(a, bestMatch, t));
+        }
+
+        // Remaining odd player gets passed down
+        unpartnered.addAll(pool);
+        return games;
+    }
+
+    private Game createGame(Player a, Player b, Tournament t) {
+        previousOpponents.get(a).add(b);
+        previousOpponents.get(b).add(a);
+
+        Game game = assignColours(a, b, t);
+        game.setRound(round);
+        return game.generateResult();
+    }
+
+    private boolean hasPlayed(Player a, Player b) {
+        return previousOpponents.get(a) != null && previousOpponents.get(a).contains(b);
+    }
+
+    private Game assignColours(Player a, Player b, Tournament t) {
+        int balanceA = colourBalance.getOrDefault(a, 0);
+        int balanceB = colourBalance.getOrDefault(b, 0);
+
+        Player white, black;
+
+        if (balanceA < balanceB) {
+            white = a;
+            black = b;
+        } else if (balanceA > balanceB) {
+            white = b;
+            black = a;
+        } else {
+            white = a.getRating() >= b.getRating() ? a : b;
+            black = (white == a) ? b : a;
+        }
+
+        colourBalance.put(white, colourBalance.get(white) + 1);
+        colourBalance.put(black, colourBalance.get(black) - 1);
+
+        return GameManager.generateGame(white, black, t, round);
+    }
+
+    private List<List<Player>> buildScoreGroups(List<Player> playerPool) {
+        Player[] sorted = playerPool.toArray(new Player[0]);
+
         for (int i = 0; i < sorted.length - 1; i++) {
             for (int j = i + 1; j < sorted.length; j++) {
-
                 if (sorted[i].getScore() == sorted[j].getScore()) {
-                    // If their scores are even then sort them by tiebreaks
                     if (sorted[i].getTieBreak() < sorted[j].getTieBreak()) {
                         Player temp = sorted[i];
                         sorted[i] = sorted[j];
                         sorted[j] = temp;
                     }
-
                 } else if (sorted[i].getScore() < sorted[j].getScore()) {
-                    // if J's score is larger than I's then swap them
                     Player temp = sorted[i];
                     sorted[i] = sorted[j];
                     sorted[j] = temp;
                 }
             }
         }
-        
 
-        //group players with the same score together
         List<List<Player>> groups = new ArrayList<>();
         List<Player> current = new ArrayList<>();
 
@@ -123,94 +215,92 @@ public class MatchMaker {
             current.add(p);
         }
         if (!current.isEmpty()) {
-            groups.add(current); // add last group
+            groups.add(current);
         }
         return groups;
-
     }
 
-    private List<Game> pairGroup(List<Player> group, Tournament t) {
-        List<Game> games = new ArrayList<>();
-        List<Player> unpaired = new ArrayList<>(group);
+    public int getRound() {
+        return round;
+    }
 
-        // fold pairing
-        int mid = unpaired.size() / 2;
+    public void setRound(int round) {
+        this.round = round;
+    }
 
-        List<Player> top = new ArrayList<>(unpaired.subList(0, mid));
-        List<Player> bottom = new ArrayList<>(unpaired.subList(mid, unpaired.size()));
-
-        for (int i = 0; i < top.size(); i++) {
-            Player a = top.get(i);
-            Player b = bottom.get(i);
-
-            // rematch check -- if they played, swap b with the player next in line
-            if (hasPlayed(a, b)) {
-                boolean resolved = false;
-
-                for (int j = i + 1; j < bottom.size(); j++) {
-                    if (!hasPlayed(a, bottom.get(j))) {
-                        // then swap players
-                        Player temp = bottom.get(i);
-                        bottom.set(i, bottom.get(j));
-                        bottom.set(j, temp);
-                        b = bottom.get(i);
-                        resolved = true;
-                        break;
+    private List<Player> getLeaderBoard() {
+        Player[] leaderboard = players.toArray(new Player[0]);
+        for (int i = 0; i < leaderboard.length - 1; i++) {
+            for (int j = i + 1; j < leaderboard.length; j++) {
+                if (leaderboard[i].getScore() == leaderboard[j].getScore()) {
+                    if (leaderboard[i].getTieBreak() < leaderboard[j].getTieBreak()) {
+                        Player temp = leaderboard[i];
+                        leaderboard[i] = leaderboard[j];
+                        leaderboard[j] = temp;
                     }
-                }
-
-                if (!resolved) {
-                    //cant resolve in this group, 
-                    continue;
+                } else if (leaderboard[i].getScore() < leaderboard[j].getScore()) {
+                    Player temp = leaderboard[i];
+                    leaderboard[i] = leaderboard[j];
+                    leaderboard[j] = temp;
                 }
             }
-
-            previousOpponents.get(a).add(b);
-            previousOpponents.get(b).add(a);
-
-            // assign colours and make game
-            Game game = assignColours(a, b, t);
-            game.setRound(round);
-            games.add(game.generateResult());
-
         }
+        return List.of(leaderboard);
+    }
+    
+    public List<Player> getLeaderboardForRound(int round){
+        return leaderboardPerRound.get(round);
+    }
+    
+    /*
+    Had an issue when getting the leaderboards of certain rounds - the scores 
+    and tiebreaks only reflected the latest rounds. 
+    It turns out that java updates those same player objects with the updates rounds
+    since its in memory, so i had to create a 'snapshot' of the leaderboards
+    */
+    private List<Player> getLeaderBoardSnapshot(){
+        List<Player> snap = new ArrayList<>();
+        
+        for(Player p : getLeaderBoard()){
+            snap.add(new Player(p));
+        }
+        
+        return snap;
+    }
+    
+    
+    /**
+     * Calculates Buchholz tiebreak scores (sum of opponents' scores)
+     * and persists changes using PlayerEntity's existing update method.
+     */
+    private void updateScoresAndTieBreaks() {
+        for (Player p : players) {
+            double buchholz = 0.0;
+            List<Player> opponents = previousOpponents.getOrDefault(p, new ArrayList<>());
+
+            for (Player opponent : opponents) {
+                buchholz += opponent.getScore();
+            }
+
+            p.setTieBreak(buchholz);
+
+            // Use the existing Entity update method with PlayerFields enum keys
+            HashMap<String, Object> attrs = new HashMap<>();
+            attrs.put("score", p.getScore());
+            attrs.put("tiebreak", p.getTieBreak());
+
+            PE.update(p.getId(), attrs);
+        }
+        
+        System.out.println("Updated scores and tiebreaks");
+    }
+    
+    /**
+     * Returns all the games simulated in the tournament
+     * (Mainly for the Exporter class)
+     * @return 
+     */
+    public List<Game> getGames(){
         return games;
-    }
-
-    private boolean hasPlayed(Player a, Player b) {
-        return previousOpponents.get(a).contains(b);
-    }
-
-    private void assignBye(Player p) {
-        if (!hasRecievedBye.get(p)) {
-            p.setScore(p.getScore() + 0.5);
-            hasRecievedBye.put(p, true);
-        }
-    }
-
-    private Game assignColours(Player a, Player b, Tournament t) {
-        int balanceA = colourBalance.get(a);
-        int balanceB = colourBalance.get(b);
-
-        Player white, black;
-
-        if (balanceA < balanceB) {
-            // a has played more black, then give them white
-            white = a;
-            black = b;
-        } else if (balanceA > balanceB) {
-            // b has played more black, give them white
-            white = b;
-            black = a;
-        } else {
-            // equal balance
-            white = a.getRating() >= b.getRating() ? a : b;
-            black = white == a ? b : a;
-        }
-
-        colourBalance.put(white, colourBalance.get(white) + 1);
-        colourBalance.put(black, colourBalance.get(black) - 1);
-
-        return GameManager.generateGame(white, black, t, round);
     }
 }

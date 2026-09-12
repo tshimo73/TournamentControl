@@ -299,7 +299,7 @@ public class CreateTournament extends javax.swing.JFrame {
 
     private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
         this.dispose();
-        new ui.tabbedPanels.TournamentsPage().setVisible(true);
+        new ui.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
 
     private void txfNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfNameActionPerformed

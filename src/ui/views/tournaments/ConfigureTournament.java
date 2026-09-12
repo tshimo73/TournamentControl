@@ -4,10 +4,8 @@
  */
 package ui.views.tournaments;
 
-import database.PlayerFields;
 import entities.PlayerEntity;
 import entities.TournamentEntity;
-import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import jframeconfig.Config;
@@ -37,7 +35,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
 
         txfNumPlayers.setText(tblPlayers.getRowCount() + "");
 
-        PlayerFields[] playerFields = PlayerFields.values();
+        String[] playerFields = {"Full Name", "Title", "Fide ID", "Federation",
+                                 "Rating", "Score", "Tiebreak"};
 
         MODEL.setColumnIdentifiers(playerFields);
 
@@ -154,7 +153,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
 
     private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
         this.dispose();
-        new ui.tabbedPanels.TournamentsPage().setVisible(true);
+        new ui.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
 
     private void btnGPlayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGPlayerActionPerformed
@@ -179,13 +178,11 @@ public class ConfigureTournament extends javax.swing.JFrame {
         if (PE.insert(p)) {
 
             MODEL.addRow(new Object[]{
-                p.getTournamentID(),
+                p.getFullName(),
                 p.getTitle(),
-                p.getFirstName(),
-                p.getLastName(),
                 p.getFideID(),
-                p.getRating(),
                 p.getFederation(),
+                p.getRating(),
                 p.getScore(),
                 p.getTieBreak()
             });

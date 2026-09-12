@@ -3,7 +3,6 @@ package ui;
 
 
 import jframeconfig.Config;
-import ui.tabbedPanels.*;
 import database.DatabaseManager;
 
 public class Main extends javax.swing.JFrame {
@@ -13,10 +12,7 @@ public class Main extends javax.swing.JFrame {
     public Main() {
         initComponents();
         DatabaseManager.init();
-        this.setSize(Config.FRAME_WIDTH, Config.FRAME_HEIGHT);
-        this.setIconImage(cf.getIcon().getImage());
-        this.setTitle(Config.PROJECT_NAME);
-        this.setLocationRelativeTo(this);
+        Config.setAttributes(this);
         
     }
 

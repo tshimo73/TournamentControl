@@ -20,26 +20,9 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/*
-    File Layout Planning (for reference)
-
-    .tctrl (Tournament Control)
-
-                
-                
-    sb.append("TOURNAMENT").append("#");
-      sb.append(id).append("#");   
-    sb.append(name).append("#");
-    sb.append(federation).append("#");
-    sb.append(director).append("#");
-    sb.append(chiefArbiter).append("#");
-    sb.append(deputyChiefArbiter).append("#");
-    sb.append(tournamentType).append("#");
-    sb.append(startDate).append("#");
-    sb.append(endDate).append("#");
-    sb.append(rounds);
-                
-
+/**
+ *
+ * @author tshim
  */
 public class Importer {
 
@@ -87,7 +70,7 @@ public class Importer {
 
                     t = new Tournament();
 
-                    t.setId(Integer.parseInt(id));
+                    t.setId(id);
                     t.setName(name);
                     t.setDirector(director);
                     t.setFederation(fed);
@@ -126,14 +109,13 @@ public class Importer {
                 } else if (title.equals(FileTitle.GAME.toString())) {
 
                     int id = Integer.parseInt(tokens[1]), round = Integer.parseInt(tokens[2]),
-                            tournID = Integer.parseInt(tokens[3]), wID = Integer.parseInt(tokens[4]),
-                            bID = Integer.parseInt(tokens[5]);
+                            wID = Integer.parseInt(tokens[4]), bID = Integer.parseInt(tokens[5]);
                     GameResult res = GameResult.valueOf(tokens[6]);
-                    String opening = tokens[7];
+                    String tournID = tokens[3], opening = tokens[7];
 
                     // If the game isnt apart of this tournament, ignore it and
                     // continue checking the other games
-                    if (tournID != t.getId()) {
+                    if (!tournID.equals(t.getId())) {
                         continue;
                     }
 
@@ -168,6 +150,10 @@ public class Importer {
         } catch (FileNotFoundException ex) {
             System.out.println("File not found.");
             Logger.getLogger(Importer.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (sc != null) {
+                sc.close();
+            }
         }
     }
 
@@ -180,7 +166,6 @@ public class Importer {
                 + "federation, director, chief_arbiter, deputy_chief_arbiter,"
                 + "tournament_type_id, start_date, end_date)"
                 + " VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-        ArrayList<PreparedStatement> stmts = new ArrayList<>();
 
         try {
             // adding all the statements so that i can run them all at the same time
@@ -204,15 +189,15 @@ public class Importer {
 
                 stmtForTID.setString(1, t.getName());
 
-                ResultSet rs = stmt.executeQuery();
+                ResultSet rs = stmtForTID.executeQuery();
 
                 if (rs.next()) {
+                    String sqlGames = "INSERT INTO tblGames (tournament_id, round_number"
+                            + ", white_player_id, black_player_id, result) VALUES("
+                            + "?, ?, ?, ?, ?)";
+                    PreparedStatement stmtGames = DatabaseManager.getConn().prepareStatement(sqlGames);
 
                     for (Game g : t.getGames()) {
-                        String sqlGames = "INSERT INTO tblGames (tournament_id, round_number"
-                                + ", white_player_id, black_player_id, result) VALUES("
-                                + "?, ?, ?, ?, ?)";
-                        PreparedStatement stmtGames = DatabaseManager.getConn().prepareStatement(sqlGames);
 
                         stmtGames.setInt(1, rs.getInt("id"));
                         stmtGames.setInt(2, g.getRound());
@@ -220,31 +205,28 @@ public class Importer {
                         stmtGames.setInt(4, g.getBlack().getId());
                         stmtGames.setString(5, g.getResult().getScore());
 
-                        stmts.add(stmtGames);
+                        stmtGames.addBatch();
                     }
-                }
-            }
 
-            try {
-                for (PreparedStatement ps : stmts) {
-                    ps.executeUpdate();
+                    stmtGames.executeBatch();
                 }
-
                 DatabaseManager.getConn().commit();
-                System.out.println("Tournament successfully saved");
                 return true;
-            } catch (SQLException ex) {
-                Logger.getLogger(Importer.class.getName()).log(Level.SEVERE, null, ex);
-                DatabaseManager.getConn().rollback();
+            } else {
                 return false;
-            } finally {
-                DatabaseManager.getConn().setAutoCommit(true);
             }
         } catch (SQLException ex) {
             System.out.println("\nFailed to save imported tournament to database.\n");
             System.out.println(ex.getMessage() + "\n");
             Logger.getLogger(Importer.class.getName()).log(Level.SEVERE, null, ex);
             return false;
+        } finally {
+
+            try {
+                DatabaseManager.getConn().setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("autocommit failed to reset");
+            }
         }
 
     }

@@ -4,8 +4,8 @@ package players;
 import enums.PlayerTitle;
 
 public class Player {
-    private int id, tournamentID = -1;
-    private String firstName, lastName, fideID, federation;
+    private int id;
+    private String firstName, lastName, fideID, federation, tournamentID;
     private double rating, score = 0.0, tieBreak = 0.0;
     private PlayerTitle title;
     
@@ -17,6 +17,19 @@ public class Player {
         this.federation = fed;
         this.rating = rat;
         this.title = t;
+    }
+    /**
+     * Needed to create the snapshots for the matchmaker leaderboards
+     */
+    public Player(Player playerSnap){
+        id = playerSnap.getId();
+        firstName = playerSnap.getFirstName();
+        lastName = playerSnap.getLastName();
+        rating = playerSnap.getRating();
+        score = playerSnap.getScore();
+        tieBreak = playerSnap.getTieBreak();
+        federation = playerSnap.getFederation();
+        title = playerSnap.getTitle();
     }
     
     public Player(){}
@@ -120,11 +133,11 @@ public class Player {
         this.tieBreak = tieBreak;
     }
     
-    public void setTournamentID(int tID){
+    public void setTournamentID(String tID){
         this.tournamentID = tID;
     }
     
-    public int getTournamentID(){
+    public String getTournamentID(){
         return tournamentID;
     }
     

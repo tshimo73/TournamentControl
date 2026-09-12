@@ -17,25 +17,8 @@ public class PlayerManager {
         Player p = new Player(id, F.name().firstName(), F.name().lastName(),
                           id + "", F.country().countryCode3().toUpperCase(),
                        title.getRating(), title);
-        p.setTournamentID(0); // a 'default' value to be changed agian for each generated player
-        
+        p.setTournamentID(null);
         return p;
     }
     
-    /**
-     * Saves the player to the database under their respective tournament
-     * @param p
-     * @return 
-     */
-    public static boolean saveToDB(Player p){
-        
-        if(p.getTournamentID() == -1){
-            System.out.println("Player with FIDE ID: " + p.getFideID() + " is not "
-                    + "registered in a tournament.");
-            return false;
-        } else {
-            
-            return true;
-        }
-    }
 }

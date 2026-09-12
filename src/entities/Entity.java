@@ -56,7 +56,6 @@ abstract class Entity<T> {
 
                 for (int i = 1; i <= meta.getColumnCount(); i++) {
                     row.put(meta.getColumnName(i), rs.getObject(i));
-                    System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
                 }
 
                 return mapRow(row);
@@ -89,7 +88,6 @@ abstract class Entity<T> {
                 // i didn't know the methods in the ResultSetMetaData class
                 for (int i = 1; i <= meta.getColumnCount(); i++) {
                     row.put(meta.getColumnName(i), rs.getObject(i));
-                    System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
                 }
 
                 T result = mapRow(row);
@@ -168,7 +166,6 @@ abstract class Entity<T> {
 
                     for (int i = 1; i <= meta.getColumnCount(); i++) {
                         row.put(meta.getColumnName(i), rs.getObject(i));
-                        System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
                     }
 
                     return mapRow(row);
@@ -182,6 +179,63 @@ abstract class Entity<T> {
             return null;
         }
 
+    }
+    
+    // i discovered the ... parameter thing today, really cool.
+    // other than the required parameters it allows for an 'infinite' amount of optional
+    // parameters that get put into an array.
+    public List<HashMap<String, Object>> selectWhere(String field, String operation, Object answer, String... fieldsToSelect) {
+        // i did it this way because i'm not selecting all the rows,
+        // with the hashmap i can get specific about what exactly i want to get
+        // i.e. I only select id and date of birth
+        // i can get them specifically from the hashmap and typecast them
+
+        List<HashMap<String, Object>> rowsOfPlayerResults = new ArrayList<>();
+
+        List<String> operations = new ArrayList<>();
+        operations.add("=");
+        operations.add(">");
+        operations.add("<");
+        operations.add("<>");
+
+        
+        // joining them fields to add to the select statement
+        String fields = (fieldsToSelect.length == 0)
+                ? "*" : String.join(", ", fieldsToSelect);
+
+        try {
+            boolean isAllowedOp = operations.contains(operation) || "LIKE".equalsIgnoreCase(operation);
+            if (!isAllowedOp) {
+                System.out.println("No SQL statement could be made");
+                return null;
+            }
+
+            String sql = String.format("SELECT %s FROM %s WHERE %s %s ?",
+                    fields, getTable(), field, operation);
+            System.out.println(sql);
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            
+            // i was unsure of the answers data typeS
+            stmt.setObject(1, answer);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                HashMap<String, Object> row = new HashMap<>();
+                ResultSetMetaData meta = rs.getMetaData();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+
+                rowsOfPlayerResults.add(row);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to get player results");
+            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return rowsOfPlayerResults;
     }
 
     protected abstract T mapRow(Map<String, Object> row);

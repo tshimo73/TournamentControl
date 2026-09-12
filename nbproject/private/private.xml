@@ -3,9 +3,22 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/tournaments/TournamentManager.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/entities/GameEntity.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/views/tournaments/TournamentRounds.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/players/PlayerManager.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/views/tournaments/CreateTournament.java</file>
             <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/views/tournaments/ViewTournament.java</file>
-            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/jframeconfig/Config.java</file>
-            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/Main.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/entities/Entity.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/database/DatabaseManager.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/entities/TournamentEntity.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/views/tournaments/ConfigureTournament.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/matchmaking/MatchMaker.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/database/PlayerFields.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/tournaments/Tournament.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/entities/PlayerEntity.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/ui/tabbedPanels/TournamentsPage.java</file>
+            <file>file:/C:/Users/tshim/OneDrive/Desktop/Documents/NetBeansProjects/ChessTournamentManagementSystem/src/utils/Validation.java</file>
         </group>
     </open-files>
 </project-private>

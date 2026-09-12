@@ -5,10 +5,14 @@
 
 package entities;
 
+import database.DatabaseManager;
 import enums.GameResult;
 import java.util.Map;
 import games.*;
-
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GameEntity extends Entity<Game>{
     private final PlayerEntity pe = new PlayerEntity();
@@ -18,8 +22,42 @@ public class GameEntity extends Entity<Game>{
     }
 
     
+    public boolean insert(Game g) {
+        try {
+            // extract values from class
+            String tID = g.getTournament().getId(), result = g.getResult().getScore(),
+                    opening = g.getOpening();
+            int roundNum = g.getRound(), wID = g.getWhite().getId(),
+                    bID = g.getBlack().getId();
+            
+            String sql = String.format("INSERT INTO %s (tournament_id, round_number,"
+                    + " white_player_id, black_player_id, result, opening) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)", getTable());
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            stmt.setString(1, tID);
+            stmt.setInt(2, roundNum);
+            stmt.setInt(3, wID);
+            stmt.setInt(4, bID);
+            stmt.setString(5, result);
+            stmt.setString(6, opening);
+
+            if (stmt.executeUpdate() > 0) {
+                System.out.println(String.format("Inserted game: W(%s) vs B(%s)", g.getWhite().getFullName(), g.getBlack().getFullName()));
+                return true;
+            } else {
+                System.out.println("game not inserted");
+                return false;
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to insert game.");
+            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    } 
+    
     @Override
-    protected Game mapRow(Map<String, Object> row){
+    public Game mapRow(Map<String, Object> row){
         Game game = new Game();
         
         game.setBlack(pe.find((int) row.get("black_player_id")));

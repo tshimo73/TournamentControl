@@ -3,6 +3,7 @@ package ui.views.tournaments;
 import database.DatabaseManager;
 import entities.TournamentEntity;
 import enums.GameResult;
+import filing.exporter.Exporter;
 import filing.importer.Importer;
 import games.Game;
 import java.util.ArrayList;
@@ -15,7 +16,9 @@ import tournaments.*;
 import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import ui.view.managers.ViewTournamentManager;
 
 public class ViewTournament extends javax.swing.JFrame {
 
@@ -23,6 +26,7 @@ public class ViewTournament extends javax.swing.JFrame {
     private Importer importer;
     private final TournamentEntity TE = new TournamentEntity();
     private final DefaultTableModel MODEL = new DefaultTableModel();
+    private ViewTournamentManager vtm = new ViewTournamentManager();
 
     /**
      * Creates new form ViewTournaments
@@ -212,6 +216,8 @@ public class ViewTournament extends javax.swing.JFrame {
         lblAverageRating = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblLeaderboard = new javax.swing.JTable();
+        lblStats1 = new javax.swing.JLabel();
+        btnExport = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -241,7 +247,7 @@ public class ViewTournament extends javax.swing.JFrame {
         });
         lpnlVT.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlVT.add(btnTournamentTab);
-        btnTournamentTab.setBounds(1096, 16, 230, 40);
+        btnTournamentTab.setBounds(1080, 20, 230, 40);
 
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -300,6 +306,23 @@ public class ViewTournament extends javax.swing.JFrame {
         lpnlVT.add(jScrollPane1);
         jScrollPane1.setBounds(417, 154, 898, 402);
 
+        lblStats1.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18)); // NOI18N
+        lblStats1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblStats1.setText("Statistics");
+        lpnlVT.add(lblStats1);
+        lblStats1.setBounds(40, 88, 288, 37);
+
+        btnExport.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnExport.setText("Export");
+        btnExport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExportActionPerformed(evt);
+            }
+        });
+        lpnlVT.setLayer(btnExport, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlVT.add(btnExport);
+        btnExport.setBounds(1080, 90, 230, 40);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -321,8 +344,51 @@ public class ViewTournament extends javax.swing.JFrame {
 
     private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
         this.dispose();
-        new ui.tabbedPanels.TournamentsPage().setVisible(true);
+        new ui.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
+
+    private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
+        int res = JOptionPane.showConfirmDialog(this, "Do you want to export this tournament?", "Export Tournament Confirmation", JOptionPane.YES_NO_OPTION);
+        if(res == JOptionPane.YES_OPTION){
+            System.out.println("Exporting tournament...");
+            
+            // Again, issues with the JFileChooser, so i needed help to do it manually.
+            
+            // 1. Find the parent window safely for the dialog
+            java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
+            java.awt.Frame parentFrame = null;
+            if (parentWindow instanceof java.awt.Frame frame) {
+                parentFrame = frame;
+            }
+
+            // 2. Open the native file dialog in SAVE mode
+            java.awt.FileDialog fileDialog = new java.awt.FileDialog(parentFrame, "Export Tournament", java.awt.FileDialog.SAVE);
+            
+            // Set the default file name the user will see
+            fileDialog.setFile(t.getName() + "_Export" + filing.exporter.Exporter.FILE_EXTENSION);
+            fileDialog.setVisible(true);
+
+            // 3. Grab the directory and filename the user chose
+            String directory = fileDialog.getDirectory();
+            String filename = fileDialog.getFile();
+            
+            if (directory != null && filename != null) {
+                // Create the exact file path the user requested
+                java.io.File saveLocation = new java.io.File(directory, filename);
+                
+                // 4. Pass the location to your updated manager
+                java.io.File exportedFile = vtm.export(t, saveLocation);
+                
+                if (exportedFile != null) {
+                    javax.swing.JOptionPane.showMessageDialog(this, "Tournament exported successfully to:\n" + saveLocation.getAbsolutePath());
+                } else {
+                    javax.swing.JOptionPane.showMessageDialog(this, "Failed to export the tournament.", "Export Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                System.out.println("User cancelled the export.");
+            }
+        }
+    }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt, javax.swing.JButton btn) {
         if (importer.saveToDB()) {
@@ -371,6 +437,7 @@ public class ViewTournament extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnExport;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnTournamentTab;
     private javax.swing.JScrollPane jScrollPane1;
@@ -381,6 +448,7 @@ public class ViewTournament extends javax.swing.JFrame {
     private javax.swing.JLabel lblNumPlayers;
     private javax.swing.JLabel lblPOTT;
     private javax.swing.JLabel lblStats;
+    private javax.swing.JLabel lblStats1;
     private javax.swing.JLabel lblTotalGames;
     private javax.swing.JLayeredPane lpnlVT;
     private javax.swing.JTable tblLeaderboard;

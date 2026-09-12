@@ -12,7 +12,6 @@ import javax.swing.table.DefaultTableModel;
 import matchmaking.MatchMaker;
 import players.Player;
 import tournaments.Tournament;
-import database.PlayerFields;
 import entities.GameEntity;
 import games.Game;
 import java.util.HashMap;
@@ -146,7 +145,7 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void setRegisteredPlayers() {
         List<Player> players = new ArrayList<>();
 
-        List<HashMap<String, Object>> ps = PE.selectWhere(PlayerFields.TOURNAMENT_ID, "=", t.getId());
+        List<HashMap<String, Object>> ps = PE.selectWhere("tournament_id", "=", t.getId());
 
         if (!ps.isEmpty()) {
             for (HashMap<String, Object> playerRow : ps) {
@@ -366,7 +365,7 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
         this.dispose();
-        new ui.tabbedPanels.TournamentsPage().setVisible(true);
+        new ui.TournamentsPage().setVisible(true);
     }//GEN-LAST:event_btnTournamentTabActionPerformed
 
     private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed

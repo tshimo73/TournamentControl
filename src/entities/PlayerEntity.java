@@ -5,7 +5,6 @@
 package entities;
 
 import database.DatabaseManager;
-import database.PlayerFields;
 import java.sql.*;
 import java.util.Map;
 import players.*;
@@ -25,7 +24,7 @@ public class PlayerEntity extends Entity<Player> {
     public boolean insert(Player p) {
         try {
             // extract values from class
-            int tID = p.getTournamentID();
+            String tID = p.getTournamentID();
             PlayerTitle title = p.getTitle();
             String fN = p.getFirstName(), lN = p.getLastName(), fID = p.getFideID(),
                     fed = p.getFederation();
@@ -35,7 +34,7 @@ public class PlayerEntity extends Entity<Player> {
                     + "(?, ?, ?, ?, ?, ?, ?, ?, ?)", getTable());
 
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
-            stmt.setInt(1, tID);
+            stmt.setString(1, tID);
             stmt.setString(2, fN);
             stmt.setString(3, lN);
             stmt.setString(4, fID);
@@ -58,98 +57,29 @@ public class PlayerEntity extends Entity<Player> {
         }
     }
 
-    // i discovered the ... parameter thing today, really cool.
-    // other than the required parameters it allows for an 'infinite' amount of optional
-    // parameters that get put into an array.
-    public List<HashMap<String, Object>> selectWhere(PlayerFields field, String operation, Object answer, PlayerFields... fieldsToSelect) {
-        // i did it this way because i'm not selecting all the rows,
-        // with the hashmap i can get specific about what exactly i want to get
-        // i.e. I only select id and date of birth
-        // i can get them specifically from the hashmap and typecast them
-
-        List<HashMap<String, Object>> rowsOfPlayerResults = new ArrayList<>();
-
-        List<String> operations = new ArrayList<>();
-        operations.add("=");
-        operations.add(">");
-        operations.add("<");
-        operations.add("<>");
-
-        // converting all the fields to LOWERCASE strings, since the enum returns them as uppercase
-        String[] fts = new String[fieldsToSelect.length];
-
-        for (int i = 0; i < fieldsToSelect.length; i++) {
-            if (fieldsToSelect.length == 0 || fieldsToSelect == null) {
-                break;
-            }
-
-            fts[i] = fieldsToSelect[i].toString();
-        }
-
-        // joining them fields to add to the select statement
-        String fields = (fieldsToSelect == null || fieldsToSelect.length == 0)
-                ? "*" : String.join(", ", fts);
-
-        try {
-
-            String sql = operations.contains(operation)
-                    ? String.format("SELECT %s FROM %s WHERE %s %s %s",
-                            fields, getTable(), field.toString(), operation, answer)
-                    : (operation.equals("LIKE"))
-                    ? String.format("SELECT %s FROM %s WHERE %s %s \"%s\"",
-                            fields, getTable(), field.toString(), operation, answer)
-                    : null; // only using this method for basic operations 
-            // and LIKE. anything else will be done manually.
-
-            if (sql == null) {
-                System.out.println("No SQL statement could be configured"
-                        + " in the player entity.");
-                return null;
-            }
-
-            Statement stmt = DatabaseManager.getConn().createStatement();
-
-            ResultSet rs = stmt.executeQuery(sql);
-
-            while (rs.next()) {
-                HashMap<String, Object> row = new HashMap<>();
-                ResultSetMetaData meta = rs.getMetaData();
-                for (int i = 1; i <= meta.getColumnCount(); i++) {
-                    System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
-                    row.put(meta.getColumnName(i), rs.getObject(i));
-                }
-
-                rowsOfPlayerResults.add(row);
-            }
-        } catch (SQLException ex) {
-            System.out.println("Failed to get player results");
-            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        return rowsOfPlayerResults;
-    }
 
     /**
-     * Finds player by their FIDE ID. Returns the first--which should be the 
+     * Finds player by their FIDE ID. Returns the first--which should be the
      * only--player
+     *
      * @param fID
-     * @return 
+     * @return
      */
     public Player findByFideID(String fID) {
         // Words cannot express how happy I am with this method
-        HashMap<String, Object> playerRow = selectWhere(PlayerFields.FIDE_ID, "=", fID).getFirst();
-        
+        HashMap<String, Object> playerRow = selectWhere("fide_id", "=", fID).getFirst();
+
         return mapRow(playerRow);
     }
 
     @Override
-    protected Player mapRow(Map<String, Object> row) {
+    public Player mapRow(Map<String, Object> row) {
         Player p = new Player();
 
         // 'Number' used because the numbers in the DB were casted as Double
         // Couldn't find an Integer data type on access so i stuck with this
         p.setId(((Number) row.get("id")).intValue());
-        p.setTournamentID(((Number) row.get("tournament_id")).intValue());
+        p.setTournamentID((String) row.get("tournament_id"));
         p.setFirstName((String) row.get("first_name"));
         p.setLastName((String) row.get("last_name"));
         p.setFideID((String) row.get("fide_id"));
@@ -163,4 +93,5 @@ public class PlayerEntity extends Entity<Player> {
 
         return p;
     }
+
 }

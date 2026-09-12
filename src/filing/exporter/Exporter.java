@@ -46,18 +46,12 @@ public class Exporter {
     private final Tournament t;
     private final File file;
     
-    public Exporter(List<Game> g, List<Player> p, Tournament tm){
-        games = g;
-        players = p;
-        t = tm;
-        file = new File(String.format("%s_Export%s", t.getName(), FILE_EXTENSION));
-    }
     
-    public Exporter(Tournament tm){
+    public Exporter(Tournament tm, File dest){
         t = tm;
         games = tm.getGames();
         players = tm.getPlayers();
-        file = new File(String.format("%s_Export%s", t.getName(), FILE_EXTENSION));
+        file = dest;
     }
     
     public File export(){
