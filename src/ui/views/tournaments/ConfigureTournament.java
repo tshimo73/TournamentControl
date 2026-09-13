@@ -163,7 +163,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
     }//GEN-LAST:event_btnGPlayerActionPerformed
 
     private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
-        if(tblPlayers.getRowCount() > 2){
+        if(tblPlayers.getRowCount() >= 2){
             this.dispose();
             new TournamentRounds(t).setVisible(true);
         } else {

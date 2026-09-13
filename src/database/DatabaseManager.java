@@ -47,41 +47,17 @@ public class DatabaseManager {
         }
     }
 
-    public static void printColumns() {
-        try {
-            DatabaseMetaData metaData = conn.getMetaData();
-
-            ResultSet tables = metaData.getTables(null, null, "%", new String[]{"TABLE"});
-
-            while (tables.next()) {
-                String tableName = tables.getString("TABLE_NAME");
-                System.out.println("Table: " + tableName);
-
-                ResultSet columns = metaData.getColumns(null, null, tableName, "%");
-
-                while (columns.next()) {
-                    String columnName = columns.getString("COLUMN_NAME");
-                    String type = columns.getString("TYPE_NAME");
-
-                    System.out.println("    " + columnName + " (" + type + ")");
-                }
-
-                columns.close();
-                System.out.println();
-            }
-
-            tables.close();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static Connection getConn() {
         return conn;
     }
 
-    public static boolean isConnected() throws SQLException {
-        return conn.isValid(0);
+    private static boolean isConnected() {
+        try {
+            return conn.isValid(0);
+        } catch (SQLException ex) {
+            System.out.println("Error checking if the database is connected");
+            Logger.getLogger(DatabaseManager.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
     }
 }

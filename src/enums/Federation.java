@@ -158,6 +158,7 @@ public enum Federation {
     POL("Poland"),
     POR("Portugal"),
     PRK("North Korea"),
+    PRT("Portugal"),
     PUR("Puerto Rico"),
     QAT("Qatar"),
     ROU("Romania"),

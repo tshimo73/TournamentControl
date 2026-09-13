@@ -110,7 +110,7 @@ public class Importer {
 
                     int id = Integer.parseInt(tokens[1]), round = Integer.parseInt(tokens[2]),
                             wID = Integer.parseInt(tokens[4]), bID = Integer.parseInt(tokens[5]);
-                    GameResult res = GameResult.valueOf(tokens[6]);
+                    GameResult res = GameResult.getResultFromScore(tokens[6]);
                     String tournID = tokens[3], opening = tokens[7];
 
                     // If the game isnt apart of this tournament, ignore it and

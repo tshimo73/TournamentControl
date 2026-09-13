@@ -29,12 +29,11 @@ public class TournamentRounds extends javax.swing.JFrame {
     private final GameEntity GE = new GameEntity();
     private Tournament t;
     private final DefaultTableModel MODEL_ROUNDS = new DefaultTableModel(),
-                                    MODEL_LEADERBOARD = new DefaultTableModel();
+            MODEL_LEADERBOARD = new DefaultTableModel();
     private MatchMaker mm;
     private int currRound = 1, maxRounds;
     private HashMap<Integer, List<Game>> gamesForEachRound = new HashMap<>();
     private boolean hasEnded = false;
-    
 
     /**
      * Creates new form TournamentRounds
@@ -63,12 +62,12 @@ public class TournamentRounds extends javax.swing.JFrame {
         String[] roundFields = {"Round Number", "White Player", "Black Player", "Result", "Opening"};
         MODEL_ROUNDS.setColumnIdentifiers(roundFields);
         tblRounds.setModel(MODEL_ROUNDS);
-        
+
         String[] leaderboardFields = {"Rank", "Full Name", "Federation", "Rating",
-                                      "Score", "Tiebreak"};
+            "Score", "Tiebreak"};
         MODEL_LEADERBOARD.setColumnIdentifiers(leaderboardFields);
         tblLeaderboard.setModel(MODEL_LEADERBOARD);
-        
+
         //to remove all the netbeans given options(item 1, 2, 3, etc)
         cBoxRound.removeAllItems();
 
@@ -78,21 +77,31 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     private void genRound() {
         if (currRound <= maxRounds) {
+
+            if (currRound == maxRounds) {
+
+                HashMap<String, Object> attrs = new HashMap<>();
+                attrs.put("has_ended", true);
+                hasEnded = true;
+
+                t = TE.update(t.getId(), attrs);
+            }
+
             List<Game> games = mm.generateRound(t);
             gamesForEachRound.put(currRound, games);
-            
-            for(Game g : games){
-                if(!GE.insert(g)){
+
+            for (Game g : games) {
+                if (!GE.insert(g)) {
                     System.out.println("failed to insert game in round: " + currRound);
                 }
             }
-            
-            cBoxRound.addItem(currRound + "");;
+
+            cBoxRound.addItem(currRound + "");
             showTableRound(currRound);
             setLeaderBoard(currRound);
-            pBarRounds.setValue(currRound); 
+            pBarRounds.setValue(currRound);
             updateRoundCompletion(currRound); // updates the percentage of the rounds completed
-            
+
             currRound++; // increments round to prepare for then next one
             mm.setRound(currRound); // sets the next round of the matchmaker
         } else {
@@ -100,11 +109,6 @@ public class TournamentRounds extends javax.swing.JFrame {
             System.out.println(s);
             JOptionPane.showMessageDialog(this, s);
 
-            HashMap<String, Object> attrs = new HashMap<>();
-            attrs.put("has_ended", true);
-            hasEnded = true;
-
-            t = TE.update(t.getId(), attrs);
         }
     }
 
@@ -123,11 +127,10 @@ public class TournamentRounds extends javax.swing.JFrame {
             addGame(g);
         }
         cBoxRound.setSelectedIndex(round - 1);
-        
-        
+
     }
-    
-    private void updateRoundCompletion(int roundNum){
+
+    private void updateRoundCompletion(int roundNum) {
         double percentage = (double) roundNum / (double) maxRounds * 100;
         lblRoundCompletion.setText(String.format("%.2f", percentage) + "%"); //format confused actual percentage symbol as a placeholder
     }
@@ -141,7 +144,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             g.getOpening()
         });
     }
-    
+
     private void setRegisteredPlayers() {
         List<Player> players = new ArrayList<>();
 
@@ -173,18 +176,18 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void initMatchMaker() {
         mm = new MatchMaker(t.getPlayers(), currRound);
     }
-    
-    private void setLeaderBoard(int round){
+
+    private void setLeaderBoard(int round) {
         MODEL_LEADERBOARD.setRowCount(0);
-        
+
         int rank = 1;
-        for(Player p : mm.getLeaderboardForRound(round)){
+        for (Player p : mm.getLeaderboardForRound(round)) {
             addToLeaderboard(p, rank);
             rank++;
         }
     }
-    
-    private void addToLeaderboard(Player p, int rank){
+
+    private void addToLeaderboard(Player p, int rank) {
         MODEL_LEADERBOARD.addRow(new Object[]{
             rank,
             p.getFullName(),
@@ -194,7 +197,6 @@ public class TournamentRounds extends javax.swing.JFrame {
             p.getTieBreak()
         });
     }
-    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -343,7 +345,7 @@ public class TournamentRounds extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSeeFinalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSeeFinalActionPerformed
-        if(!hasEnded){
+        if (!hasEnded) {
             JOptionPane.showMessageDialog(null, "Tournament has not ended. Please Simulate all the rounds.");
             return;
         }

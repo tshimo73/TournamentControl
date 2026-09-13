@@ -1,6 +1,9 @@
 package ui;
 
+import entities.GameEntity;
+import entities.PlayerEntity;
 import entities.TournamentEntity;
+import enums.Federation;
 import filing.InvalidFileExtensionException;
 import filing.importer.Importer;
 import java.util.List;
@@ -8,24 +11,24 @@ import javax.swing.table.DefaultTableModel;
 import jframeconfig.Config;
 import tournaments.Tournament;
 import java.io.File;
+import javax.swing.JOptionPane;
 import ui.views.tournaments.ViewTournament;
 
 public class TournamentsPage extends javax.swing.JFrame {
-    
-    TournamentEntity te = new TournamentEntity();
-    String[] tblTournamentFields = {"Name", "Federation", "Director", "Rounds",
+    private TournamentEntity te = new TournamentEntity();
+    private DefaultTableModel model;
+    private String[] tblTournamentFields = {"Name", "Federation", "Director", "Rounds",
         "Type", "Start Date", "End Date"};
-    Config cf = new Config();
 
     /**
      * Creates new form TournamentsPage
      */
     public TournamentsPage() {
         initComponents();
-        cf.setAttributes(this, "Tournaments");
+        Config.setAttributes(this, "Tournaments");
 
         //set up the table to hold the tournaments and makes it so cells arent editable
-        DefaultTableModel model = new DefaultTableModel(tblTournamentFields, 0) {
+        model = new DefaultTableModel(tblTournamentFields, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -35,16 +38,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         List<Tournament> tournaments = te.getAll();
         
         for (Tournament t : tournaments) {
-            
-            model.addRow(new Object[]{
-                t.getName(),
-                t.getFederation(),
-                t.getDirector(),
-                t.getRounds(),
-                t.getTournamentType().getName(),
-                t.getStartDate().format(Config.DTF),
-                t.getEndDate().format(Config.DTF)
-            });
+            addTournament(t);
         }
         
         tblTournaments.setModel(model);
@@ -65,6 +59,18 @@ public class TournamentsPage extends javax.swing.JFrame {
             }
         });
     }
+    
+    private void addTournament(Tournament t){
+        model.addRow(new Object[]{
+                t.getName(),
+                Federation.valueOf(t.getFederation()).getCountryName(),
+                t.getDirector(),
+                t.getRounds(),
+                t.getTournamentType().getName(),
+                t.getStartDate().format(Config.DTF),
+                t.getEndDate().format(Config.DTF)
+            });
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -81,6 +87,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         btnHomeTab = new javax.swing.JButton();
         btnCreateTournament = new javax.swing.JButton();
         btnImportTournament = new javax.swing.JButton();
+        btnClear = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -109,7 +116,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         });
         lpnlTournamentPage.setLayer(btnHomeTab, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTournamentPage.add(btnHomeTab);
-        btnHomeTab.setBounds(540, 10, 230, 40);
+        btnHomeTab.setBounds(530, 20, 230, 40);
 
         btnCreateTournament.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnCreateTournament.setText("Create");
@@ -120,7 +127,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         });
         lpnlTournamentPage.setLayer(btnCreateTournament, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTournamentPage.add(btnCreateTournament);
-        btnCreateTournament.setBounds(540, 120, 230, 40);
+        btnCreateTournament.setBounds(530, 120, 230, 40);
 
         btnImportTournament.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
         btnImportTournament.setText("Import");
@@ -131,7 +138,18 @@ public class TournamentsPage extends javax.swing.JFrame {
         });
         lpnlTournamentPage.setLayer(btnImportTournament, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTournamentPage.add(btnImportTournament);
-        btnImportTournament.setBounds(790, 70, 230, 40);
+        btnImportTournament.setBounds(770, 70, 230, 40);
+
+        btnClear.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnClear.setText("Clear All");
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnClearActionPerformed(evt);
+            }
+        });
+        lpnlTournamentPage.setLayer(btnClear, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTournamentPage.add(btnClear);
+        btnClear.setBounds(300, 70, 220, 40);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -241,7 +259,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         fileDialog.setDirectory(System.getProperty("user.dir"));
 
         //this has been done by me
-        fileDialog.setIconImage(cf.getIcon().getImage());
+        fileDialog.setIconImage(Config.getIcon().getImage());
 
         // 5. Make the dialog visible (this pauses execution until the user selects a file or cancels)
         fileDialog.setVisible(true);
@@ -264,8 +282,7 @@ public class TournamentsPage extends javax.swing.JFrame {
                 t.setIsImported(true);
                 this.dispose();
                 
-                ui.views.tournaments.ViewTournament page = new ui.views.tournaments.ViewTournament(t);
-                page.setImporter(im);
+                ui.views.tournaments.ViewTournament page = new ui.views.tournaments.ViewTournament(t, im);
                 page.setVisible(true);
                 
             } catch (InvalidFileExtensionException ex) {
@@ -275,6 +292,27 @@ public class TournamentsPage extends javax.swing.JFrame {
             System.out.println("User cancelled the file selection.");
         }
     }//GEN-LAST:event_btnImportTournamentActionPerformed
+
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+        String s = "Are you sure that you want to delete the app?\nThis action cannot be reverted"
+                + "\nClicking 'YES' will delete all the tournaments, games, and players";
+        int res = JOptionPane.showConfirmDialog(this, s, "Delete Data", JOptionPane.YES_NO_OPTION);
+        
+        if(res == JOptionPane.YES_OPTION){
+            PlayerEntity pe = new PlayerEntity();
+            GameEntity ge = new GameEntity();
+            
+            ge.deleteAll();
+            pe.deleteAll();
+            te.deleteAll();
+            
+            System.out.println("Successfully deleted app data.");
+            
+            // reset page
+            this.dispose();
+            new TournamentsPage().setVisible(true);
+        }
+    }//GEN-LAST:event_btnClearActionPerformed
 
     /**
      * @param args the command line arguments
@@ -312,6 +350,7 @@ public class TournamentsPage extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnClear;
     private javax.swing.JButton btnCreateTournament;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnImportTournament;

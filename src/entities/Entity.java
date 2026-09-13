@@ -24,14 +24,10 @@ abstract class Entity<T> {
 
     public Entity(Class<T> c) {
         this.table = "tbl" + c.getSimpleName() + "s";
-
-        System.out.println("From " + table + "\n");
     }
 
     public Entity(Class<T> c, String table) {
         this.table = table;
-
-        System.out.println("From " + table + "\n");
     }
 
     /**
@@ -236,6 +232,22 @@ abstract class Entity<T> {
         }
 
         return rowsOfPlayerResults;
+    }
+    
+    public void deleteAll(){
+        try {
+            String sql = "DELETE * FROM " + table;
+            
+            Statement stmt = DatabaseManager.getConn().createStatement();
+            
+            int affected = stmt.executeUpdate(sql);
+            
+            if(affected > 0) System.out.println("Successfully deleted all records from " + table);
+            else System.out.println("Failed to delete all records from " + table);
+        } catch (SQLException ex) {
+            System.out.println("Failed to delete all records from " + table);
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     protected abstract T mapRow(Map<String, Object> row);

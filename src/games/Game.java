@@ -85,7 +85,7 @@ public class Game {
     }
 
     public boolean isDraw() {
-        return result.equals(GameResult.DRAW.getScore());
+        return result.equals(GameResult.DRAW);
     }
     
     public int getId() {

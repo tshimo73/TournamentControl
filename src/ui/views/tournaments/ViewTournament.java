@@ -2,6 +2,7 @@ package ui.views.tournaments;
 
 import database.DatabaseManager;
 import entities.TournamentEntity;
+import enums.Federation;
 import enums.GameResult;
 import filing.exporter.Exporter;
 import filing.importer.Importer;
@@ -23,10 +24,10 @@ import ui.view.managers.ViewTournamentManager;
 public class ViewTournament extends javax.swing.JFrame {
 
     private final Tournament t;
-    private Importer importer;
-    private final TournamentEntity TE = new TournamentEntity();
-    private final DefaultTableModel MODEL = new DefaultTableModel();
-    private ViewTournamentManager vtm = new ViewTournamentManager();
+    private Importer importer = null;
+    private final TournamentEntity te = new TournamentEntity();
+    private final DefaultTableModel model = new DefaultTableModel();
+    private ViewTournamentManager vtm;
 
     /**
      * Creates new form ViewTournaments
@@ -36,22 +37,55 @@ public class ViewTournament extends javax.swing.JFrame {
     public ViewTournament(Tournament tournament) {
         initComponents();
         this.t = tournament;
+        vtm = new ViewTournamentManager(t);
 
         Config.setAttributes(this, tournament.getName());
         lblHeading.setText(t.getName() + "(Rounds: " + t.getRounds() + ")");
 
         setTournamentStats();
-        
+
         // leaderboard table
-        String[] fields = {"Rank", "Full Name", "FIDE ID", "Rating", "Federation", 
-                           "Score", "Tiebreak", "Wins", "Draws", "Losses"};
-        MODEL.setColumnIdentifiers(fields);
-        tblLeaderboard.setModel(MODEL);
+        String[] fields = {"Rank", "Full Name", "FIDE ID", "Rating", "Federation",
+            "Score", "Tiebreak", "Wins", "Draws", "Losses"};
+        model.setColumnIdentifiers(fields);
+        tblLeaderboard.setModel(model);
         getLeaderboard();
-        
+
     }
 
-    public void setTournamentStats() {
+    public ViewTournament(Tournament tournament, Importer im) {
+        initComponents();
+        this.t = tournament;
+        this.importer = im;
+        vtm = new ViewTournamentManager(t);
+
+        Config.setAttributes(this, "Imported: " + tournament.getName());
+        lblHeading.setText(t.getName() + "(Rounds: " + t.getRounds() + ")");
+
+        setImportedTournamentStats();
+
+        // leaderboard table
+        String[] fields = {"Rank", "Full Name", "FIDE ID", "Rating", "Federation",
+            "Score", "Tiebreak", "Wins", "Draws", "Losses"};
+        model.setColumnIdentifiers(fields);
+        tblLeaderboard.setModel(model);
+        
+        List<Player> leaderboard = (List<Player>) vtm.getImportedTournamentStats(t).get("leaderboard");
+        getImportedLeaderboard(leaderboard, t.getGames());
+
+    }
+
+    private void setImportedTournamentStats() {
+        HashMap<String, Object> stats = vtm.getImportedTournamentStats(t);
+
+        lblAverageRating.setText(String.format("Average Rating: %.2f", (double) stats.get("aveRating")));
+        lblDrawPercentage.setText(String.format("Draw Percentage: %.2f%%", (double) stats.get("drawPercentage")));
+        lblNumPlayers.setText(String.format("Number of Players: %d", (int) stats.get("numPlayers")));
+        lblTotalGames.setText(String.format("Total Games: %d", (int) stats.get("numGames")));
+        lblNumNoDraws.setText(String.format("Number of Decisive Games: %d", (int) stats.get("decisiveGames")));
+    }
+
+    private void setTournamentStats() {
 
         try {
             int numGames = 0, numPlayers = 0,
@@ -110,89 +144,40 @@ public class ViewTournament extends javax.swing.JFrame {
         }
     }
 
-    public void setGamesFromDB() {
-        if (t.getIsImported()) {
-            return;
-        }
-        System.out.println("Seeding tournament with games from Database...");
-        List<Game> gs = TE.getGames(t.getId());
-
-        if (!gs.isEmpty()) {
-            t.setGames(gs);
-            System.out.printf("%d games found and added!", gs.size());
-        } else {
-            System.out.println("No games were found for this tournament");
-        }
-
-    }
-
     /**
      * Gets the top 20 (if theres more than 20) players in the tournament
      *
      * @param topX
      */
     private void getLeaderboard() {
-        try {
-            // used embedded queries because i had two player id fields so creating
-            // the link was a hassle. embeddeds was easy
-            Statement stmt = DatabaseManager.getConn().createStatement();
-            String sql = String.format("SELECT TOP 20 first_name & \" \" & last_name AS [FullName], "
-                    + "fide_id, rating, federation, score, tiebreak, "
-                    
-                    // win embedded query
-                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
-                    + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
-                    + ")) AS [Wins], "
-                    
-                    // draw embedded
-                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
-                    + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
-                    + ")) AS [Draws], "
-                    
-                    // loss embedded
-                    + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
-                    + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
-                    + ")) AS [Losses] "
-                    
-                    // rest of the query
-                    + "FROM tblRegistrations WHERE tournament_id = \"%s\" "
-                    + "ORDER BY score DESC, tiebreak DESC",
-                    t.getId(), GameResult.WHITE_WIN.getScore(), GameResult.BLACK_WIN.getScore(), // win vars
-                    t.getId(), GameResult.DRAW.getScore(), GameResult.DRAW.getScore(), // draw vars
-                    t.getId(), GameResult.BLACK_WIN.getScore(), GameResult.WHITE_WIN.getScore(), // loss vars
-                    t.getId()); // for the final where clause
+        vtm.getLeaderboard(model);
+    }
 
-            ResultSet rs = stmt.executeQuery(sql);
+    /**
+     * Adds the leaderboard to the table
+     * @param ps - the already sorted players list
+     * @param gs  - all the games played
+     */
+    private void getImportedLeaderboard(List<Player> ps, List<Game> gs) {
+        HashMap<Player, List<Integer>> wdl = vtm.getWDL(ps, gs);
+        int rank = 1;
+        for (Player p : ps) {
+            model.addRow(new Object[]{
+                rank,
+                p.getFullName(),
+                p.getFideID(),
+                p.getRating(),
+                Federation.valueOf(p.getFederation()).getCountryName(),
+                p.getScore(),
+                p.getTieBreak(),
+                wdl.get(p).get(0), // wins
+                wdl.get(p).get(1), // draws
+                wdl.get(p).get(2), // losses
+            });
+            rank++;
 
-            int rank = 1;
-            while (rs.next()) {
-                MODEL.addRow(new Object[]{
-                    rank,
-                    rs.getString("FullName"),
-                    rs.getString("fide_id"),
-                    rs.getDouble("rating"),
-                    rs.getString("federation"),
-                    rs.getDouble("score"),
-                    rs.getDouble("tiebreak"),
-                    rs.getInt("Wins"),
-                    rs.getInt("Draws"),
-                    rs.getInt("Losses")
-                });
-                rank++;
-            }
-
-        } catch (SQLException ex) {
-            System.out.println("Failed to get leaderboard");
-            Logger.getLogger(ViewTournament.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -349,11 +334,10 @@ public class ViewTournament extends javax.swing.JFrame {
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
         int res = JOptionPane.showConfirmDialog(this, "Do you want to export this tournament?", "Export Tournament Confirmation", JOptionPane.YES_NO_OPTION);
-        if(res == JOptionPane.YES_OPTION){
+        if (res == JOptionPane.YES_OPTION) {
             System.out.println("Exporting tournament...");
-            
+
             // Again, issues with the JFileChooser, so i needed help to do it manually.
-            
             // 1. Find the parent window safely for the dialog
             java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
             java.awt.Frame parentFrame = null;
@@ -363,7 +347,7 @@ public class ViewTournament extends javax.swing.JFrame {
 
             // 2. Open the native file dialog in SAVE mode
             java.awt.FileDialog fileDialog = new java.awt.FileDialog(parentFrame, "Export Tournament", java.awt.FileDialog.SAVE);
-            
+
             // Set the default file name the user will see
             fileDialog.setFile(t.getName() + "_Export" + filing.exporter.Exporter.FILE_EXTENSION);
             fileDialog.setVisible(true);
@@ -371,14 +355,14 @@ public class ViewTournament extends javax.swing.JFrame {
             // 3. Grab the directory and filename the user chose
             String directory = fileDialog.getDirectory();
             String filename = fileDialog.getFile();
-            
+
             if (directory != null && filename != null) {
                 // Create the exact file path the user requested
                 java.io.File saveLocation = new java.io.File(directory, filename);
-                
+
                 // 4. Pass the location to your updated manager
-                java.io.File exportedFile = vtm.export(t, saveLocation);
-                
+                java.io.File exportedFile = vtm.export(saveLocation);
+
                 if (exportedFile != null) {
                     javax.swing.JOptionPane.showMessageDialog(this, "Tournament exported successfully to:\n" + saveLocation.getAbsolutePath());
                 } else {
@@ -389,17 +373,6 @@ public class ViewTournament extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_btnExportActionPerformed
-
-    private void btnSaveActionPerformed(java.awt.event.ActionEvent evt, javax.swing.JButton btn) {
-        if (importer.saveToDB()) {
-            btn.setVisible(false);
-        }
-    }
-
-
-    public void setImporter(Importer im) {
-        importer = im;
-    }
 
     /**
      * @param args the command line arguments
