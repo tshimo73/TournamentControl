@@ -138,8 +138,8 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void addGame(Game g) {
         MODEL_ROUNDS.addRow(new Object[]{
             g.getRound(),
-            getPlayerName(g.getWhite().getId()),
-            getPlayerName(g.getBlack().getId()),
+            getPlayerName(g.getWhite().getFideID()),
+            getPlayerName(g.getBlack().getFideID()),
             g.getResult().getScore() + "(" + g.getResult().name() + ")",
             g.getOpening()
         });
@@ -163,9 +163,9 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     }
 
-    private String getPlayerName(int id) {
+    private String getPlayerName(String fID) {
         for (Player p : t.getPlayers()) {
-            if (p.getId() == id) {
+            if (p.getFideID().equals(fID)) {
                 return p.getFullName();
             }
         }

@@ -3,6 +3,7 @@ package ui.view.managers;
 import database.DatabaseManager;
 import entities.GameEntity;
 import entities.PlayerEntity;
+import entities.TournamentEntity;
 import enums.Federation;
 import enums.GameResult;
 import filing.exporter.Exporter;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import players.Player;
 import tournaments.Tournament;
@@ -26,6 +28,7 @@ public class ViewTournamentManager {
     private Exporter ex;
     private PlayerEntity pe = new PlayerEntity();
     private GameEntity ge = new GameEntity();
+    private TournamentEntity te = new TournamentEntity();
     private Tournament t;
 
     public ViewTournamentManager(Tournament t) {
@@ -39,6 +42,47 @@ public class ViewTournamentManager {
         ex = new Exporter(t, dest);
 
         return ex.export();
+    }
+    
+    /**
+     * saves importeds tournament to the database
+     * @return 
+     */
+    public boolean saveToDB(Tournament t){
+
+        try {
+            
+            if (!(te.find(t.getId()) == null)) {
+                JOptionPane.showMessageDialog(null, "This tournament is already saved in the database.", "Duplicate", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+
+            te.insert(t);
+
+            for (Player p : t.getPlayers()) {
+                p.setTournamentID(t.getId());
+                Player dbP = pe.findByFideID(p.getFideID());
+                
+                if (dbP == null || !dbP.getTournamentID().equals(t.getId())) {
+                    pe.insert(p);
+                }
+            }
+
+            for (Game g : t.getGames()) {
+                ge.insert(g);
+            }
+
+            t.setIsImported(false);
+            
+            JOptionPane.showMessageDialog(null, "Tournament successfully saved to the database!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            return true;
+
+        } catch (Exception ex) {
+            Logger.getLogger(ViewTournament.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "Failed to save tournament: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
     }
 
     public void getLeaderboard(DefaultTableModel model) {

@@ -208,7 +208,6 @@ abstract class Entity<T> {
 
             String sql = String.format("SELECT %s FROM %s WHERE %s %s ?",
                     fields, getTable(), field, operation);
-            System.out.println(sql);
 
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
             

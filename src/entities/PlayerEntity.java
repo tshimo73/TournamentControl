@@ -57,7 +57,6 @@ public class PlayerEntity extends Entity<Player> {
         }
     }
 
-
     /**
      * Finds player by their FIDE ID. Returns the first--which should be the
      * only--player
@@ -66,10 +65,14 @@ public class PlayerEntity extends Entity<Player> {
      * @return
      */
     public Player findByFideID(String fID) {
-        // Words cannot express how happy I am with this method
-        HashMap<String, Object> playerRow = selectWhere("fide_id", "=", fID).getFirst();
+        // Words cannot express how happy I am with this method (the select where)
+        List<HashMap<String, Object>> playerRows = selectWhere("fide_id", "=", fID);
 
-        return mapRow(playerRow);
+        if (playerRows == null || playerRows.isEmpty()) {
+            return null;
+        }
+
+        return mapRow(playerRows.getFirst());
     }
 
     @Override

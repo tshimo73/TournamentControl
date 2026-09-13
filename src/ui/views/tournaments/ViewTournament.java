@@ -17,8 +17,10 @@ import tournaments.*;
 import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import ui.TournamentsPage;
 import ui.view.managers.ViewTournamentManager;
 
 public class ViewTournament extends javax.swing.JFrame {
@@ -69,9 +71,25 @@ public class ViewTournament extends javax.swing.JFrame {
             "Score", "Tiebreak", "Wins", "Draws", "Losses"};
         model.setColumnIdentifiers(fields);
         tblLeaderboard.setModel(model);
-        
+
         List<Player> leaderboard = (List<Player>) vtm.getImportedTournamentStats(t).get("leaderboard");
         getImportedLeaderboard(leaderboard, t.getGames());
+
+        // add a save button
+        JButton btnSave = new JButton();
+        btnSave.setText("Save to DB");
+        btnSave.setFont(Config.getFont());
+
+        int w = btnExport.getWidth(), h = btnExport.getHeight(),
+                x = btnExport.getX() - w - 15, y = btnExport.getY();
+
+        btnSave.setBounds(x, y, w, h);
+
+        lpnlVT.add(btnSave);
+
+        btnSave.addActionListener(evt -> {
+            btnSaveActionPerformed(evt, btnSave);
+        });
 
     }
 
@@ -83,6 +101,25 @@ public class ViewTournament extends javax.swing.JFrame {
         lblNumPlayers.setText(String.format("Number of Players: %d", (int) stats.get("numPlayers")));
         lblTotalGames.setText(String.format("Total Games: %d", (int) stats.get("numGames")));
         lblNumNoDraws.setText(String.format("Number of Decisive Games: %d", (int) stats.get("decisiveGames")));
+    }
+
+    private void btnSaveActionPerformed(java.awt.event.ActionEvent evt, JButton btnSave) {
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Do you want to save this imported tournament and its games to the database?",
+                "Save Tournament",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        
+        if(vtm.saveToDB(t)){
+            btnSave.setVisible(false);
+            this.dispose();
+            new TournamentsPage().setVisible(true);
+        }
     }
 
     private void setTournamentStats() {
@@ -155,8 +192,9 @@ public class ViewTournament extends javax.swing.JFrame {
 
     /**
      * Adds the leaderboard to the table
+     *
      * @param ps - the already sorted players list
-     * @param gs  - all the games played
+     * @param gs - all the games played
      */
     private void getImportedLeaderboard(List<Player> ps, List<Game> gs) {
         HashMap<Player, List<Integer>> wdl = vtm.getWDL(ps, gs);
@@ -349,7 +387,7 @@ public class ViewTournament extends javax.swing.JFrame {
             java.awt.FileDialog fileDialog = new java.awt.FileDialog(parentFrame, "Export Tournament", java.awt.FileDialog.SAVE);
 
             // Set the default file name the user will see
-            fileDialog.setFile(t.getName() + "_Export" + filing.exporter.Exporter.FILE_EXTENSION);
+            fileDialog.setFile(t.getName().replaceAll(" ", "_") + "_Export" + filing.exporter.Exporter.FILE_EXTENSION);
             fileDialog.setVisible(true);
 
             // 3. Grab the directory and filename the user chose
