@@ -84,7 +84,9 @@ public class TournamentRounds extends javax.swing.JFrame {
                 attrs.put("has_ended", true);
                 hasEnded = true;
 
+                List<Player> prev = t.getPlayers();
                 t = TE.update(t.getId(), attrs);
+                t.setPlayers(prev);
             }
 
             List<Game> games = mm.generateRound(t);
@@ -138,8 +140,8 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void addGame(Game g) {
         MODEL_ROUNDS.addRow(new Object[]{
             g.getRound(),
-            getPlayerName(g.getWhite().getFideID()),
-            getPlayerName(g.getBlack().getFideID()),
+            g.getWhite().getFullName(),
+            g.getBlack().getFullName(),
             g.getResult().getScore() + "(" + g.getResult().name() + ")",
             g.getOpening()
         });
@@ -161,16 +163,6 @@ public class TournamentRounds extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "This tournament does not have enough players.");
         }
 
-    }
-
-    private String getPlayerName(String fID) {
-        for (Player p : t.getPlayers()) {
-            if (p.getFideID().equals(fID)) {
-                return p.getFullName();
-            }
-        }
-
-        return "Unavailable";
     }
 
     private void initMatchMaker() {
