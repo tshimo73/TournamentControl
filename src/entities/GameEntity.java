@@ -26,9 +26,9 @@ public class GameEntity extends Entity<Game>{
         try {
             // extract values from class
             String tID = g.getTournament().getId(), result = g.getResult().getScore(),
-                    opening = g.getOpening();
-            int roundNum = g.getRound(), wID = g.getWhite().getId(),
-                    bID = g.getBlack().getId();
+                    opening = g.getOpening(), wFID = g.getWhite().getFideID(),
+                    bFID = g.getBlack().getFideID();
+            int roundNum = g.getRound();
             
             String sql = String.format("INSERT INTO %s (tournament_id, round_number,"
                     + " white_player_id, black_player_id, result, opening) "
@@ -37,8 +37,8 @@ public class GameEntity extends Entity<Game>{
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
             stmt.setString(1, tID);
             stmt.setInt(2, roundNum);
-            stmt.setInt(3, wID);
-            stmt.setInt(4, bID);
+            stmt.setString(3, wFID);
+            stmt.setString(4, bFID);
             stmt.setString(5, result);
             stmt.setString(6, opening);
 
@@ -60,8 +60,8 @@ public class GameEntity extends Entity<Game>{
     public Game mapRow(Map<String, Object> row){
         Game game = new Game();
         
-        game.setBlack(pe.find((int) row.get("black_player_id")));
-        game.setWhite(pe.find((int) row.get("white_player_id")));
+        game.setBlack(pe.findByFideID((String) row.get("black_player_id")));
+        game.setWhite(pe.findByFideID((String) row.get("white_player_id")));
         
         String result = (String) row.get("result");
         game.setResult(GameResult.getResultFromScore(result));

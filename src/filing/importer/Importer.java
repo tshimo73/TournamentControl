@@ -34,7 +34,7 @@ public class Importer {
 
     // keeps track of players in the tournament -- spcified in the id so that the can be added
     // as a player to the games
-    HashMap<Integer, Player> playersWithID = new HashMap<>();
+    HashMap<String, Player> playersWithID = new HashMap<>();
 
     public Importer(File file) {
         this.file = file;
@@ -105,11 +105,10 @@ public class Importer {
 
                     players.add(p);
 
-                    playersWithID.put(id, p);
+                    playersWithID.put(p.getFideID(), p);
                 } else if (title.equals(FileTitle.GAME.toString())) {
-
-                    int id = Integer.parseInt(tokens[1]), round = Integer.parseInt(tokens[2]),
-                            wID = Integer.parseInt(tokens[4]), bID = Integer.parseInt(tokens[5]);
+                    String wFID = tokens[4], bFID = tokens[5];
+                    int id = Integer.parseInt(tokens[1]), round = Integer.parseInt(tokens[2]);
                     GameResult res = GameResult.getResultFromScore(tokens[6]);
                     String tournID = tokens[3], opening = tokens[7];
 
@@ -122,8 +121,8 @@ public class Importer {
                     Game g = new Game();
                     g.setId(id);
                     g.setRound(round);
-                    g.setBlack(playersWithID.get(bID));
-                    g.setWhite(playersWithID.get(wID));
+                    g.setBlack(playersWithID.get(bFID));
+                    g.setWhite(playersWithID.get(wFID));
                     g.setResult(res);
                     g.setOpening(opening);
                     g.setTournament(t);

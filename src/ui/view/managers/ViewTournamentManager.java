@@ -95,20 +95,20 @@ public class ViewTournamentManager {
                     // win embedded query
                     + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
                     + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + "(tblRegistrations.fide_id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.fide_id = tblGames.black_player_id AND result = \"%s\")"
                     + ")) AS [Wins], "
                     // draw embedded
                     + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
                     + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + "(tblRegistrations.fide_id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.fide_id = tblGames.black_player_id AND result = \"%s\")"
                     + ")) AS [Draws], "
                     // loss embedded
                     + "(SELECT COUNT(id) FROM tblGames WHERE tournament_id = \"%s\" "
                     + "AND ("
-                    + "(tblRegistrations.id = tblGames.white_player_id AND result = \"%s\") "
-                    + "OR (tblRegistrations.id = tblGames.black_player_id AND result = \"%s\")"
+                    + "(tblRegistrations.fide_id = tblGames.white_player_id AND result = \"%s\") "
+                    + "OR (tblRegistrations.fide_id = tblGames.black_player_id AND result = \"%s\")"
                     + ")) AS [Losses] "
                     // rest of the query
                     + "FROM tblRegistrations WHERE tournament_id = \"%s\" "

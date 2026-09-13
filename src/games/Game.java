@@ -73,8 +73,8 @@ public class Game {
         sb.append(id).append("#");
         sb.append(round).append("#");
         sb.append(tournament.getId()).append("#");
-        sb.append(white.getId()).append("#");
-        sb.append(black.getId()).append("#");
+        sb.append(white.getFideID()).append("#");
+        sb.append(black.getFideID()).append("#");
         sb.append(result).append("#");
         sb.append(opening);
         return sb.toString();
