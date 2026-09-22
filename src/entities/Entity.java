@@ -214,13 +214,9 @@ abstract class Entity<T> { // abstract so this class cannot be instantiated, onl
         // i.e. I only select id and date of birth
         // i can get them specifically from the hashmap and typecast them
 
-        List<HashMap<String, Object>> rowsOfPlayerResults = new ArrayList<>();
+        List<HashMap<String, Object>> rowsOfResults = new ArrayList<>();
 
-        List<String> operations = new ArrayList<>();
-        operations.add("=");
-        operations.add(">");
-        operations.add("<");
-        operations.add("<>");
+        List<String> operations = List.of("=", ">", "<", "<>");
 
         // joining them fields to add to the select statement
         String fields = (fieldsToSelect.length == 0)
@@ -250,14 +246,14 @@ abstract class Entity<T> { // abstract so this class cannot be instantiated, onl
                     row.put(meta.getColumnName(i), rs.getObject(i));
                 }
 
-                rowsOfPlayerResults.add(row);
+                rowsOfResults.add(row);
             }
         } catch (SQLException ex) {
-            System.out.println("Failed to get player results");
-            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Failed to get results");
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return rowsOfPlayerResults;
+        return rowsOfResults;
     }
 
     /**
@@ -273,7 +269,9 @@ abstract class Entity<T> { // abstract so this class cannot be instantiated, onl
 
             if (affected > 0) {
                 System.out.println("Successfully deleted all records from " + table);
-            } else {
+            } else if(affected == 0) {
+                System.out.println("No records deleted from " + table);
+            }else {
                 System.out.println("Failed to delete all records from " + table);
             }
         } catch (SQLException ex) {
