@@ -1,5 +1,9 @@
 package enums;
 
+/**
+ * The enum of chess federations
+ * @author tshim
+ */
 public enum Federation {
     AFG("Afghanistan"),
     ALB("Albania"),

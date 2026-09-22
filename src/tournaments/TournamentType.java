@@ -1,14 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package tournaments;
 
 import utils.Random;
 
+/**
+ * The enum of the types of tournaments
+ *
+ * @author tshim
+ */
 public enum TournamentType {
     CLASSICAL, RAPID, BLITZ, BULLET, HYPERBULLET, INVALID;
 
+    /**
+     * Gets the time control of the tournament
+     *
+     * @return
+     */
     public String getTimeControl() {
         switch (this) {
             case CLASSICAL:
@@ -25,34 +31,48 @@ public enum TournamentType {
                 return "Invalid Tournament Type";
         }
     }
-    
+
+    /*
+        Only found out that you could do enums like
+            ENUM("description") a while afterwards.
+     */
+    /**
+     * Gets the name
+     *
+     * @return the name
+     */
     public String getName() {
         switch (this) {
             case CLASSICAL:
-                return "Classical"; 
+                return "Classical";
             case RAPID:
-                return "Rapid"; 
+                return "Rapid";
             case BLITZ:
-                return "Blitz"; 
+                return "Blitz";
             case BULLET:
-                return "Bullet"; 
+                return "Bullet";
             case HYPERBULLET:
                 return "HyperBullet";
             default:
                 return "Invalid Tournament Type";
         }
     }
-    
+
+    /**
+     * Gets the DB ID of the enum
+     *
+     * @return
+     */
     public int getID() {
         switch (this) {
             case CLASSICAL:
-                return 1; 
+                return 1;
             case RAPID:
-                return 2; 
+                return 2;
             case BLITZ:
-                return 3; 
+                return 3;
             case BULLET:
-                return 4; 
+                return 4;
             case HYPERBULLET:
                 return 5;
             default:
@@ -62,8 +82,9 @@ public enum TournamentType {
 
     /**
      * Get number of rounds including players based on time control
+     *
      * @param numPlayers
-     * @return 
+     * @return
      */
     public int getRounds(int numPlayers) {
         if (numPlayers <= 0) {
@@ -79,7 +100,8 @@ public enum TournamentType {
 
     /**
      * Get number of rounds based on time control
-     * @return 
+     *
+     * @return
      */
     public int getRounds() {
         switch (this) {
@@ -99,6 +121,11 @@ public enum TournamentType {
         }
     }
 
+    /**
+     * Generates a tournament random type
+     *
+     * @return the generated type
+     */
     public static TournamentType getRandomType() { // Returns a random tournament type
         TournamentType[] types = TournamentType.values();
         int length = types.length;
@@ -106,19 +133,36 @@ public enum TournamentType {
 
         return types[randomNumber];
     }
-    
-    public static TournamentType getTypeByID(int id){
-        switch(id){
-            case 1: return CLASSICAL;
-            case 2: return RAPID;
-            case 3: return BLITZ;
-            case 4: return BULLET;
-            case 5: return HYPERBULLET;
-            default: return INVALID;
+
+    /**
+     * Gets the type by ID
+     *
+     * @param id
+     * @return
+     */
+    public static TournamentType getTypeByID(int id) {
+        switch (id) {
+            case 1:
+                return CLASSICAL;
+            case 2:
+                return RAPID;
+            case 3:
+                return BLITZ;
+            case 4:
+                return BULLET;
+            case 5:
+                return HYPERBULLET;
+            default:
+                return INVALID;
         }
     }
-    
-       public static TournamentType getValueFromName(String name) {
+
+    /**
+     * Gets the tournament type from the name
+     * @param name
+     * @return 
+     */
+    public static TournamentType getValueFromName(String name) {
         if (name == null || name.isBlank()) {
             return null;
         }
@@ -131,9 +175,9 @@ public enum TournamentType {
 
         return null;
     }
-    
+
     @Override
-    public String toString(){
+    public String toString() {
         return this.getName();
     }
 }

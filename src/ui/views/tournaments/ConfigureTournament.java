@@ -36,7 +36,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
         txfNumPlayers.setText(tblPlayers.getRowCount() + "");
 
         String[] playerFields = {"Full Name", "Title", "Fide ID", "Federation",
-                                 "Rating", "Score", "Tiebreak"};
+            "Rating", "Score", "Tiebreak"};
 
         MODEL.setColumnIdentifiers(playerFields);
 
@@ -52,8 +52,6 @@ public class ConfigureTournament extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        btnHomeTab = new javax.swing.JButton();
-        btnTournamentTab = new javax.swing.JButton();
         lblNumPlayers = new javax.swing.JLabel();
         lblHeading = new javax.swing.JLabel();
         txfNumPlayers = new javax.swing.JTextField();
@@ -62,29 +60,10 @@ public class ConfigureTournament extends javax.swing.JFrame {
         lblHeading1 = new javax.swing.JLabel();
         btnGPlayer = new javax.swing.JButton();
         btnSubmit = new javax.swing.JButton();
+        btnGenManualPlayer = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         getContentPane().setLayout(null);
-
-        btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
-        btnHomeTab.setText("Home");
-        btnHomeTab.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnHomeTabActionPerformed(evt);
-            }
-        });
-        getContentPane().add(btnHomeTab);
-        btnHomeTab.setBounds(50, 37, 230, 40);
-
-        btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
-        btnTournamentTab.setText("Tournaments");
-        btnTournamentTab.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnTournamentTabActionPerformed(evt);
-            }
-        });
-        getContentPane().add(btnTournamentTab);
-        btnTournamentTab.setBounds(1156, 37, 230, 40);
 
         lblNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblNumPlayers.setText("Number of Players:");
@@ -95,7 +74,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblHeading.setText("Configure Tournament");
         getContentPane().add(lblHeading);
-        lblHeading.setBounds(500, 25, 429, 40);
+        lblHeading.setBounds(430, 30, 429, 40);
 
         txfNumPlayers.setEditable(false);
         txfNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
@@ -113,17 +92,22 @@ public class ConfigureTournament extends javax.swing.JFrame {
             }
         ));
         tblPlayers.setColumnSelectionAllowed(true);
+        tblPlayers.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                tblPlayersPropertyChange(evt);
+            }
+        });
         jScrollPane1.setViewportView(tblPlayers);
         tblPlayers.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         getContentPane().add(jScrollPane1);
-        jScrollPane1.setBounds(561, 117, 825, 523);
+        jScrollPane1.setBounds(490, 130, 825, 523);
 
         lblHeading1.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 12)); // NOI18N
         lblHeading1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblHeading1.setText("Tournament Players");
         getContentPane().add(lblHeading1);
-        lblHeading1.setBounds(879, 83, 230, 28);
+        lblHeading1.setBounds(790, 100, 230, 28);
 
         btnGPlayer.setText("Generate Player");
         btnGPlayer.addActionListener(new java.awt.event.ActionListener() {
@@ -132,7 +116,7 @@ public class ConfigureTournament extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnGPlayer);
-        btnGPlayer.setBounds(178, 195, 219, 36);
+        btnGPlayer.setBounds(170, 250, 219, 36);
 
         btnSubmit.setText("Go to Tournament Rounds");
         btnSubmit.addActionListener(new java.awt.event.ActionListener() {
@@ -141,29 +125,32 @@ public class ConfigureTournament extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnSubmit);
-        btnSubmit.setBounds(178, 531, 219, 42);
+        btnSubmit.setBounds(120, 530, 260, 42);
+
+        btnGenManualPlayer.setText("Manually Add Player");
+        btnGenManualPlayer.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGenManualPlayerActionPerformed(evt);
+            }
+        });
+        getContentPane().add(btnGenManualPlayer);
+        btnGenManualPlayer.setBounds(170, 200, 220, 40);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed
-        this.dispose();
-        new ui.Main().setVisible(true);
-    }//GEN-LAST:event_btnHomeTabActionPerformed
-
-    private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
-        this.dispose();
-        new ui.TournamentsPage().setVisible(true);
-    }//GEN-LAST:event_btnTournamentTabActionPerformed
-
     private void btnGPlayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGPlayerActionPerformed
-        addPlayer();
+        Player p = Player.generatePlayer();
+        p.setTournamentID(tID);
+
+        addPlayer(p);
+
         txfNumPlayers.setText(tblPlayers.getRowCount() + "");
         System.out.println("Added a player to the tournament.");
     }//GEN-LAST:event_btnGPlayerActionPerformed
 
     private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
-        if(tblPlayers.getRowCount() >= 2){
+        if (tblPlayers.getRowCount() >= 2) {
             this.dispose();
             new TournamentRounds(t).setVisible(true);
         } else {
@@ -171,10 +158,26 @@ public class ConfigureTournament extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnSubmitActionPerformed
 
-    private void addPlayer() {
-        Player p = Player.generatePlayer();
-        p.setTournamentID(tID);
+    private void btnGenManualPlayerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenManualPlayerActionPerformed
+        AddManualPlayer adm = new AddManualPlayer(t.getId(), MODEL);
 
+        // this listener is AI assisted. Wanted to ensure that the txf updates when a manual player is added
+        adm.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                System.out.println("Adding manual player done.");
+                txfNumPlayers.setText(String.valueOf(MODEL.getRowCount()));
+            }
+        });
+
+        adm.setVisible(true);
+    }//GEN-LAST:event_btnGenManualPlayerActionPerformed
+
+    private void tblPlayersPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_tblPlayersPropertyChange
+
+    }//GEN-LAST:event_tblPlayersPropertyChange
+
+    private void addPlayer(Player p) {
         if (PE.insert(p)) {
 
             MODEL.addRow(new Object[]{
@@ -186,9 +189,9 @@ public class ConfigureTournament extends javax.swing.JFrame {
                 p.getScore(),
                 p.getTieBreak()
             });
-            
+
             System.out.println(p.getFullName() + " has been added to the tournament");
-        }else {
+        } else {
             System.out.println("Unable to add player to the tournament");
         }
     }
@@ -230,9 +233,8 @@ public class ConfigureTournament extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGPlayer;
-    private javax.swing.JButton btnHomeTab;
+    private javax.swing.JButton btnGenManualPlayer;
     private javax.swing.JButton btnSubmit;
-    private javax.swing.JButton btnTournamentTab;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblHeading;
     private javax.swing.JLabel lblHeading1;

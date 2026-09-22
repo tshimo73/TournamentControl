@@ -1,6 +1,10 @@
 
 package enums;
 
+/**
+ * Enum of game results
+ * @author tshim
+ */
 public enum GameResult {
     WHITE_WIN("1-0"),
     DRAW("0.5-0.5"),

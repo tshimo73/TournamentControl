@@ -51,7 +51,7 @@ public class ViewTournament extends javax.swing.JFrame {
             "Score", "Tiebreak", "Wins", "Draws", "Losses"};
         model.setColumnIdentifiers(fields);
         tblLeaderboard.setModel(model);
-        getLeaderboard();
+        setLeaderboard();
 
     }
 
@@ -186,8 +186,8 @@ public class ViewTournament extends javax.swing.JFrame {
      *
      * @param topX
      */
-    private void getLeaderboard() {
-        vtm.getLeaderboard(model);
+    private void setLeaderboard() {
+        vtm.setLeaderboard(model);
     }
 
     /**
@@ -350,11 +350,11 @@ public class ViewTournament extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlVT)
+            .addComponent(lpnlVT, javax.swing.GroupLayout.DEFAULT_SIZE, 1346, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlVT)
+            .addComponent(lpnlVT, javax.swing.GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
         );
 
         pack();

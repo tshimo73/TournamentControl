@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package database;
 
 import java.sql.*;
@@ -29,15 +26,19 @@ public class DatabaseManager {
 
             if (isConnected()) {
                 System.out.println("Connected to database!");
+            } else {
+                System.out.println("Failed to connect to the database.");
             }
-
-            System.out.println();
         } catch (SQLException ex) {
+            System.out.println("Failed to connect to the database.");
             ex.printStackTrace();
         }
 
     }
 
+    /**
+     * Close the database connection
+     */
     public static void closeConn() {
         try {
             conn.close();
@@ -47,10 +48,18 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Get the database connection
+     * @return Connection conn
+     */
     public static Connection getConn() {
         return conn;
     }
 
+    /**
+     * Returns the database connection status (connected / disconnected)
+     * @return database status
+     */
     private static boolean isConnected() {
         try {
             return conn.isValid(0);

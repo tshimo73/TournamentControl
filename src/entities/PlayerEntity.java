@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package entities;
 
 import database.DatabaseManager;
@@ -9,7 +6,6 @@ import java.sql.*;
 import java.util.Map;
 import players.*;
 import enums.PlayerTitle;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -21,6 +17,11 @@ public class PlayerEntity extends Entity<Player> {
         super(Player.class, "tblRegistrations");
     }
 
+    /**
+     * Inserts the player into the tblRegistrations table in the database
+     * @param p - the player to be inserted
+     * @return the success or failure of the insertion
+     */
     public boolean insert(Player p) {
         try {
             // extract values from class
@@ -75,6 +76,11 @@ public class PlayerEntity extends Entity<Player> {
         return mapRow(playerRows.getFirst());
     }
 
+    /**
+     * Maps the results into the Player object
+     * @param row
+     * @return 
+     */
     @Override
     public Player mapRow(Map<String, Object> row) {
         Player p = new Player();

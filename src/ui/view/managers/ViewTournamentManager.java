@@ -45,8 +45,10 @@ public class ViewTournamentManager {
     }
     
     /**
-     * saves importeds tournament to the database
-     * @return 
+     * saves the imported tournament to the database
+     * 
+     * @param t the tournament to be saved
+     * @return the succession or failure of the save
      */
     public boolean saveToDB(Tournament t){
 
@@ -85,7 +87,11 @@ public class ViewTournamentManager {
         }
     }
 
-    public void getLeaderboard(DefaultTableModel model) {
+    /**
+     * Sets the leaderboard table
+     * @param model 
+     */
+    public void setLeaderboard(DefaultTableModel model) {
         try {
             // used embedded queries because i had two player id fields so creating
             // the link was a hassle. embeddeds was easy
@@ -188,6 +194,11 @@ public class ViewTournamentManager {
         return wdl;
     }
 
+    /**
+     * Gets the stats of a tournament that was manually imported
+     * @param t the imported tournament
+     * @return a hashmap of the stats
+     */
     public HashMap<String, Object> getImportedTournamentStats(Tournament t) {
         HashMap<String, Object> stats = new HashMap<>();
         List<Game> games = t.getGames();
@@ -218,6 +229,11 @@ public class ViewTournamentManager {
         return stats;
     }
 
+    /**
+     * Sorts the players according to their scores and tiebreaks
+     * @param ps - the players to be sorted
+     * @return the list of sorted players
+     */
     private List<Player> sortPlayers(List<Player> ps) {
         Player[] sorted = ps.toArray(new Player[0]);
 
@@ -240,6 +256,10 @@ public class ViewTournamentManager {
         return List.of(sorted);
     }
 
+    /**
+     * Gets the players of a tournament in the db
+     * @return a list of the players
+     */
     private List<Player> getPlayers() {
         List<Player> ps = new ArrayList<>();
         for (HashMap<String, Object> playerRow : pe.selectWhere("tournament_id", "=", t.getId())) {
@@ -248,6 +268,10 @@ public class ViewTournamentManager {
         return ps;
     }
 
+    /**
+     * Gets the games of a tournament in the db
+     * @return a list of the games
+     */
     private List<Game> getGames() {
         List<Game> games = new ArrayList<>();
         for (HashMap<String, Object> gameRow : ge.selectWhere("tournament_id", "=", t.getId())) {

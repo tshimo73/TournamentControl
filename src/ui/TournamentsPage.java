@@ -88,6 +88,7 @@ public class TournamentsPage extends javax.swing.JFrame {
         btnCreateTournament = new javax.swing.JButton();
         btnImportTournament = new javax.swing.JButton();
         btnClear = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -150,6 +151,10 @@ public class TournamentsPage extends javax.swing.JFrame {
         lpnlTournamentPage.setLayer(btnClear, javax.swing.JLayeredPane.PALETTE_LAYER);
         lpnlTournamentPage.add(btnClear);
         btnClear.setBounds(300, 70, 220, 40);
+
+        jLabel1.setText("Double click a tournament row to view it!");
+        lpnlTournamentPage.add(jLabel1);
+        jLabel1.setBounds(30, 160, 290, 30);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -354,6 +359,7 @@ public class TournamentsPage extends javax.swing.JFrame {
     private javax.swing.JButton btnCreateTournament;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnImportTournament;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLayeredPane lpnlTournamentPage;
     private javax.swing.JScrollPane spnlTable;
     private javax.swing.JTable tblTournaments;

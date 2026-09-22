@@ -25,7 +25,7 @@ public class Main extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLayeredPane1 = new javax.swing.JLayeredPane();
+        lpnlMain = new javax.swing.JLayeredPane();
         btnTournamentTab = new javax.swing.JButton();
         lblBackground = new javax.swing.JLabel();
 
@@ -38,23 +38,23 @@ public class Main extends javax.swing.JFrame {
                 btnTournamentTabActionPerformed(evt);
             }
         });
-        jLayeredPane1.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
-        jLayeredPane1.add(btnTournamentTab);
+        lpnlMain.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlMain.add(btnTournamentTab);
         btnTournamentTab.setBounds(540, 10, 230, 40);
 
         lblBackground.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/TC Hero.png"))); // NOI18N
-        jLayeredPane1.add(lblBackground);
+        lpnlMain.add(lblBackground);
         lblBackground.setBounds(0, 0, 1358, 707);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
+            .addComponent(lpnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
+            .addComponent(lpnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
         );
 
         pack();
@@ -106,7 +106,7 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnTournamentTab;
-    private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLabel lblBackground;
+    private javax.swing.JLayeredPane lpnlMain;
     // End of variables declaration//GEN-END:variables
 }

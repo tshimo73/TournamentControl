@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 
 package entities;
 
@@ -21,7 +17,11 @@ public class GameEntity extends Entity<Game>{
         super(Game.class);
     }
 
-    
+    /**
+     * Inserts a game into the tblGames table
+     * @param g - Game to be inserted
+     * @return - success or failure of insertion
+     */
     public boolean insert(Game g) {
         try {
             // extract values from class
@@ -56,6 +56,11 @@ public class GameEntity extends Entity<Game>{
         }
     } 
     
+    /**
+     * Maps the results into the Game object
+     * @param row
+     * @return 
+     */
     @Override
     public Game mapRow(Map<String, Object> row){
         Game game = new Game();

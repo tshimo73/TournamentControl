@@ -26,9 +26,9 @@ public class Game {
     }
 
     /**
-     * Randomly generates a games results
+     * Randomly generates the game's results
      *
-     * @return
+     * @return the game
      */
     public Game generateResult() {
         if (!hasEnded) {
@@ -60,10 +60,6 @@ public class Game {
         } else {
             return this;
         }
-    }
-
-    public String getTimeControl() {
-        return tournament.getTournamentType().getTimeControl();
     }
 
     @Override

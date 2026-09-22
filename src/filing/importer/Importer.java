@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * The importer class handles and parses imported (.tctrl) files
  * @author tshim
  */
 public class Importer {
@@ -156,10 +156,19 @@ public class Importer {
         }
     }
 
+    /**
+     * Can only be used after scanning the file. 
+     * Returns the imported tournament
+     * @return imported tournament
+     */
     public Tournament getLoadedTournament() {
         return t;
     }
 
+    /**
+     * Saves the imported tournament in to the database
+     * @return the success or failure of the insertions
+     */
     public boolean saveToDB() {
         String sqlTournament = "INSERT INTO tblTournaments (name, "
                 + "federation, director, chief_arbiter, deputy_chief_arbiter,"

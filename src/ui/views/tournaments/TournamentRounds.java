@@ -142,7 +142,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             g.getRound(),
             g.getWhite().getFullName(),
             g.getBlack().getFullName(),
-            g.getResult().getScore() + "(" + g.getResult().name() + ")",
+            g.getResult().getScore() + " (" + g.getResult().name().replace('_', ' ').replace("WIN", "WON") + ")",
             g.getOpening()
         });
     }
@@ -241,7 +241,7 @@ public class TournamentRounds extends javax.swing.JFrame {
         lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lpnlTR.add(lblHeading);
-        lblHeading.setBounds(470, 30, 429, 40);
+        lblHeading.setBounds(470, 30, 400, 40);
 
         cBoxRound.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
         cBoxRound.addActionListener(new java.awt.event.ActionListener() {
@@ -250,7 +250,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             }
         });
         lpnlTR.add(cBoxRound);
-        cBoxRound.setBounds(490, 110, 360, 22);
+        cBoxRound.setBounds(490, 110, 360, 30);
 
         lblRoundHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
         lblRoundHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -326,11 +326,11 @@ public class TournamentRounds extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlTR)
+            .addComponent(lpnlTR, javax.swing.GroupLayout.DEFAULT_SIZE, 1350, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlTR)
+            .addComponent(lpnlTR, javax.swing.GroupLayout.DEFAULT_SIZE, 642, Short.MAX_VALUE)
         );
 
         pack();

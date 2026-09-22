@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package entities;
 
 import database.DatabaseManager;
@@ -14,18 +10,35 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * I took heavy inspiration from Springboot and Laravel for this. It was really
- * cool and made the coding so much easier so i made my own poor implementation.
+/*
+    I took heavy inspiration from Springboot and Laravel for this. It was really
+    cool and made the coding so much easier so i made my own poor implementation.
+
+    Documentation here will be general since it applies to many classes.
  */
-abstract class Entity<T> {
+/**
+ * Simplfies basic queries to the database and returns results in the wanted
+ * datatype.
+ */
+abstract class Entity<T> { // abstract so this class cannot be instantiated, only used as a parent class.
 
     private String table;
 
+    /**
+     * Assigned a table name based on the name of the model (Player, Game,
+     * Tournament)
+     *
+     * @param c
+     */
     public Entity(Class<T> c) {
         this.table = "tbl" + c.getSimpleName() + "s";
     }
 
+    /**
+     *
+     * @param c
+     * @param table - custom table name
+     */
     public Entity(Class<T> c, String table) {
         this.table = table;
     }
@@ -33,16 +46,17 @@ abstract class Entity<T> {
     /**
      * Find the row with the specified ID
      *
-     * @param id
+     * @param id - the objects id in the database (id could be an integer or a
+     * string)
      * @return
      */
-    public T find(int id) {
+    public T find(Object id) {
         try {
             String sql = "SELECT * FROM " + table + " WHERE id = ?";
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
 
             // setting the id
-            stmt.setInt(1, id);
+            stmt.setObject(1, id);
 
             ResultSet rs = stmt.executeQuery();
 
@@ -66,6 +80,11 @@ abstract class Entity<T> {
 
     }
 
+    /**
+     * Returns all rows from a table in the database
+     *
+     * @return List of rows (results)
+     */
     public List<T> getAll() {
         List<T> rows = new ArrayList<>();
 
@@ -100,13 +119,19 @@ abstract class Entity<T> {
         return rows;
     }
 
-    public boolean delete(int id) {
+    /**
+     * Deletes a row with a specified id from a table in the database
+     *
+     * @param id
+     * @return
+     */
+    public boolean delete(Object id) {
         String sql = String.format("DELETE FROM %s WHERE id = ?", table);
 
         try {
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
 
-            stmt.setInt(1, id);
+            stmt.setObject(1, id);
 
             if (stmt.executeUpdate() == 1) {
                 System.out.println("Element has been successfully deleted from the database.");
@@ -125,11 +150,11 @@ abstract class Entity<T> {
     /**
      * A method i made to update records in a table with ease
      *
-     * @param id
+     * @param id - The ID of the updated row
      * @param attrs
      * @return
      */
-    public T update(int id, Map<String, Object> attrs) {
+    public T update(Object id, Map<String, Object> attrs) {
         try {
             // really happy with how this turned out
             //had to use stringbuilder to append the attributes, normal strings
@@ -149,12 +174,13 @@ abstract class Entity<T> {
             sql.append(" WHERE id = ?");
 
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql.toString());
-            stmt.setInt(1, id);
+            stmt.setObject(1, id);
 
             if (stmt.executeUpdate() > 0) {
-                Statement s = DatabaseManager.getConn().createStatement();
-                ResultSet rs = s.executeQuery(String.format("SELECT *"
-                        + " FROM %s WHERE id = %d", table, id));
+                String selectSql = String.format("SELECT * FROM %s WHERE id = ?", table);
+                PreparedStatement selectStmt = DatabaseManager.getConn().prepareStatement(selectSql);
+                selectStmt.setObject(1, id);
+                ResultSet rs = selectStmt.executeQuery();
 
                 if (rs.next()) {
                     ResultSetMetaData meta = rs.getMetaData();
@@ -165,7 +191,9 @@ abstract class Entity<T> {
                     }
 
                     return mapRow(row);
-                } else return null;
+                } else {
+                    return null;
+                }
 
             } else {
                 return null;
@@ -176,7 +204,7 @@ abstract class Entity<T> {
         }
 
     }
-    
+
     // i discovered the ... parameter thing today, really cool.
     // other than the required parameters it allows for an 'infinite' amount of optional
     // parameters that get put into an array.
@@ -194,7 +222,6 @@ abstract class Entity<T> {
         operations.add("<");
         operations.add("<>");
 
-        
         // joining them fields to add to the select statement
         String fields = (fieldsToSelect.length == 0)
                 ? "*" : String.join(", ", fieldsToSelect);
@@ -210,7 +237,7 @@ abstract class Entity<T> {
                     fields, getTable(), field, operation);
 
             PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
-            
+
             // i was unsure of the answers data typeS
             stmt.setObject(1, answer);
 
@@ -232,17 +259,23 @@ abstract class Entity<T> {
 
         return rowsOfPlayerResults;
     }
-    
-    public void deleteAll(){
+
+    /**
+     * Deletes all rows from the database
+     */
+    public void deleteAll() {
         try {
             String sql = "DELETE * FROM " + table;
-            
+
             Statement stmt = DatabaseManager.getConn().createStatement();
-            
+
             int affected = stmt.executeUpdate(sql);
-            
-            if(affected > 0) System.out.println("Successfully deleted all records from " + table);
-            else System.out.println("Failed to delete all records from " + table);
+
+            if (affected > 0) {
+                System.out.println("Successfully deleted all records from " + table);
+            } else {
+                System.out.println("Failed to delete all records from " + table);
+            }
         } catch (SQLException ex) {
             System.out.println("Failed to delete all records from " + table);
             Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
@@ -251,12 +284,13 @@ abstract class Entity<T> {
 
     protected abstract T mapRow(Map<String, Object> row);
 
+    /**
+     * Gets the name of the table
+     *
+     * @return table
+     */
     public String getTable() {
         return table;
-    }
-
-    public void setTable(String table) {
-        this.table = table;
     }
 
 }

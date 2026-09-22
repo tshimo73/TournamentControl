@@ -1,6 +1,11 @@
 
 package filing;
 
+/**
+ * Thrown when an imported file has the wrong extension. 
+ * i.e. (.txt) instead of (.tctrl)
+ * @author tshim
+ */
 public class InvalidFileExtensionException extends Exception {
 
     /**

@@ -9,6 +9,10 @@ public class PlayerManager {
     private static final Faker F = new Faker();
     private PlayerManager(){} // Private so the class cannot be instantiated
     
+    /**
+     * Generates a random player
+     * @return the generated player
+     */
     public static Player generatePlayer(){
         
         int id = Random.getRandomInt(1, 99999999);

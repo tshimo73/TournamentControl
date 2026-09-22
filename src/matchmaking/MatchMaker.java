@@ -9,9 +9,15 @@ import players.*;
 import tournaments.Tournament;
 import entities.PlayerEntity;
 
+/**
+ * The MatchMaker class handles all the matchmaking and pairings of the
+ * tournament
+ *
+ * @author tshim
+ */
 public class MatchMaker {
 
-    int round = 1;
+    private int round;
     protected List<Player> players;
     private final Map<Player, List<Player>> previousOpponents;
     private final Map<Player, Integer> colourBalance;
@@ -36,6 +42,10 @@ public class MatchMaker {
 
     /**
      * Generates a Tournament round.
+     *
+     * @param t the tournament
+     *
+     * @return the games generated for that round
      */
     public List<Game> generateRound(Tournament t) {
         List<Game> roundGames = new ArrayList<>();
@@ -73,9 +83,8 @@ public class MatchMaker {
             Player p1 = leftover.remove(0);
             Player p2 = leftover.remove(0);
             roundGames.add(createGame(p1, p2, t));
-        } 
-        
-        
+        }
+
         // my code
         updateScoresAndTieBreaks();
         leaderboardPerRound.put(round, getLeaderBoardSnapshot());
@@ -101,6 +110,11 @@ public class MatchMaker {
         return sorted.get(0);
     }
 
+    /**
+     * Gives the unpaired player a BYE
+     *
+     * @param p
+     */
     private void assignBye(Player p) {
         // In chess, a BYE gives 1.0 point (win by forfeit/no pairing)
         p.setScore(p.getScore() + 1.0);
@@ -158,10 +172,25 @@ public class MatchMaker {
         return game.generateResult();
     }
 
+    /**
+     * Have the players played against each other
+     *
+     * @param a - player 1
+     * @param b - player 2
+     * @return yes/no
+     */
     private boolean hasPlayed(Player a, Player b) {
         return previousOpponents.get(a) != null && previousOpponents.get(a).contains(b);
     }
 
+    /**
+     * Assigns the players colours
+     *
+     * @param a - player 1
+     * @param b - player 2
+     * @param t - the tournament the game is played in
+     * @return the game
+     */
     private Game assignColours(Player a, Player b, Tournament t) {
         int balanceA = colourBalance.getOrDefault(a, 0);
         int balanceB = colourBalance.getOrDefault(b, 0);
@@ -185,6 +214,12 @@ public class MatchMaker {
         return GameManager.generateGame(white, black, t, round);
     }
 
+    /**
+     * Groups players based on their score
+     *
+     * @param playerPool - the players
+     * @return list of players in their score groups
+     */
     private List<List<Player>> buildScoreGroups(List<Player> playerPool) {
         Player[] sorted = playerPool.toArray(new Player[0]);
 
@@ -220,14 +255,10 @@ public class MatchMaker {
         return groups;
     }
 
-    public int getRound() {
-        return round;
-    }
-
-    public void setRound(int round) {
-        this.round = round;
-    }
-
+    /**
+     * Gets the leaderboard
+     * @return 
+     */
     private List<Player> getLeaderBoard() {
         Player[] leaderboard = players.toArray(new Player[0]);
         for (int i = 0; i < leaderboard.length - 1; i++) {
@@ -247,31 +278,40 @@ public class MatchMaker {
         }
         return List.of(leaderboard);
     }
-    
-    public List<Player> getLeaderboardForRound(int round){
+
+    /**
+     * Gets the leaderboard of a specific round
+     * @param round - the round played
+     * @return  - the leaderboard
+     */
+    public List<Player> getLeaderboardForRound(int round) {
         return leaderboardPerRound.get(round);
     }
-    
+
     /*
     Had an issue when getting the leaderboards of certain rounds - the scores 
     and tiebreaks only reflected the latest rounds. 
     It turns out that java updates those same player objects with the updates rounds
     since its in memory, so i had to create a 'snapshot' of the leaderboards
-    */
-    private List<Player> getLeaderBoardSnapshot(){
-        List<Player> snap = new ArrayList<>();
-        
-        for(Player p : getLeaderBoard()){
-            snap.add(new Player(p));
-        }
-        
-        return snap;
-    }
-    
+     */
     
     /**
-     * Calculates Buchholz tiebreak scores (sum of opponents' scores)
-     * and persists changes using PlayerEntity's existing update method.
+     * Returns a snapshot of the leaderboard
+     * @return 
+     */
+    private List<Player> getLeaderBoardSnapshot() {
+        List<Player> snap = new ArrayList<>();
+
+        for (Player p : getLeaderBoard()) {
+            snap.add(new Player(p));
+        }
+
+        return snap;
+    }
+
+    /**
+     * Calculates Buchholz tiebreak scores (sum of opponents' scores) and
+     * persists changes using PlayerEntity's existing update method.
      */
     private void updateScoresAndTieBreaks() {
         for (Player p : players) {
@@ -291,16 +331,25 @@ public class MatchMaker {
 
             PE.update(p.getId(), attrs);
         }
-        
+
         System.out.println("Updated scores and tiebreaks");
     }
-    
+
     /**
-     * Returns all the games simulated in the tournament
-     * (Mainly for the Exporter class)
-     * @return 
+     * Returns all the games simulated in the tournament (Mainly for the
+     * Exporter class)
+     *
+     * @return
      */
-    public List<Game> getGames(){
+    public List<Game> getGames() {
         return games;
+    }
+
+    public int getRound() {
+        return round;
+    }
+
+    public void setRound(int round) {
+        this.round = round;
     }
 }

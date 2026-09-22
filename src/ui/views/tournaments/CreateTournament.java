@@ -2,28 +2,28 @@ package ui.views.tournaments;
 
 import entities.TournamentEntity;
 import enums.Federation;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.UUID;
 import javax.swing.JOptionPane;
 import jframeconfig.Config;
 import net.datafaker.Faker;
-import tournaments.Tournament;
-import tournaments.TournamentType;
+import tournaments.*;
 import utils.Validation;
 
 public class CreateTournament extends javax.swing.JFrame {
 
     private static final Faker F = new Faker();
-    private Config cf = new Config();
     private boolean isValid = false;
+    
 
     /**
      * Creates new form CreateTournament
      */
     public CreateTournament() {
         initComponents();
-        cf.setAttributes(this, "Create A Tournament");
-        lblHeading.setFont(cf.getFont());
+        Config.setAttributes(this, "Create A Tournament");
+        lblHeading.setFont(Config.getFont());
 
         // setting up slider
         sliderRounds.setMinimum(1);
@@ -48,6 +48,7 @@ public class CreateTournament extends javax.swing.JFrame {
         }
     }
 
+    // returns the errors (if any) for the fields
     private String checkStringFields() {
         HashMap<String, String> fields = new HashMap<>();
         fields.put("Tournament Name", txfName.getText());
@@ -58,6 +59,7 @@ public class CreateTournament extends javax.swing.JFrame {
         return Validation.isAnyBlank(fields);
     }
 
+    // returns the errors (if any) for the fields
     private String checkStartAndEnd() {
         return Validation.isDateGood(dtpStart.getDateTimeStrict(), dtpEnd.getDateTimeStrict());
     }
@@ -100,6 +102,8 @@ public class CreateTournament extends javax.swing.JFrame {
         sliderRounds = new javax.swing.JSlider();
         lblRounds = new javax.swing.JLabel();
         lblNumRounds = new javax.swing.JLabel();
+        btnGenDsAndTs = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -130,51 +134,51 @@ public class CreateTournament extends javax.swing.JFrame {
         lpnlCT.add(lblHeading);
         lblHeading.setBounds(420, 20, 390, 40);
 
-        lblTName.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblTName.setText("Tournament Name: ");
+        lblTName.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblTName);
-        lblTName.setBounds(30, 140, 250, 30);
+        lblTName.setBounds(30, 140, 250, 40);
 
-        lblFed.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblFed.setText("Tournament Federation:");
+        lblFed.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblFed);
-        lblFed.setBounds(30, 190, 250, 30);
+        lblFed.setBounds(30, 190, 250, 40);
 
-        lblDirector.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblDirector.setText("Director:");
+        lblDirector.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblDirector);
-        lblDirector.setBounds(30, 240, 250, 30);
+        lblDirector.setBounds(30, 240, 250, 40);
 
-        lblCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblCA.setText("Chief Arbitor:");
+        lblCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblCA);
-        lblCA.setBounds(30, 290, 250, 30);
+        lblCA.setBounds(30, 290, 250, 40);
 
-        lblDCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblDCA.setText("Deputy Chief Arbiter:");
+        lblDCA.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblDCA);
-        lblDCA.setBounds(30, 340, 250, 30);
+        lblDCA.setBounds(30, 340, 250, 40);
 
-        lblType.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblType.setText("Tournament Type:");
+        lblType.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblType);
-        lblType.setBounds(30, 390, 250, 30);
+        lblType.setBounds(30, 390, 250, 40);
 
         lblStart.setText("Start Date and Time:");
         lblStart.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblStart);
-        lblStart.setBounds(30, 480, 250, 30);
+        lblStart.setBounds(30, 500, 250, 30);
 
         lblEnd.setText("End Date and Time:");
         lblEnd.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblEnd);
-        lblEnd.setBounds(30, 540, 250, 30);
+        lblEnd.setBounds(30, 560, 250, 30);
         lpnlCT.add(txfDirector);
-        txfDirector.setBounds(290, 240, 340, 30);
+        txfDirector.setBounds(290, 240, 340, 40);
         lpnlCT.add(txfCA);
-        txfCA.setBounds(290, 290, 340, 30);
+        txfCA.setBounds(290, 290, 340, 40);
         lpnlCT.add(txfDCA);
-        txfDCA.setBounds(290, 340, 340, 30);
+        txfDCA.setBounds(290, 340, 340, 40);
 
         txfName.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -182,7 +186,7 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(txfName);
-        txfName.setBounds(290, 140, 340, 30);
+        txfName.setBounds(290, 140, 340, 40);
 
         btnGDN.setText("Generate Director Name");
         btnGDN.addActionListener(new java.awt.event.ActionListener() {
@@ -191,7 +195,7 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(btnGDN);
-        btnGDN.setBounds(700, 240, 220, 30);
+        btnGDN.setBounds(700, 240, 220, 40);
 
         btnGCAN.setText("Generate CA Name");
         btnGCAN.addActionListener(new java.awt.event.ActionListener() {
@@ -200,7 +204,7 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(btnGCAN);
-        btnGCAN.setBounds(700, 290, 220, 30);
+        btnGCAN.setBounds(700, 290, 220, 40);
 
         btnGDCAN.setText("Generate DCA Name");
         btnGDCAN.addActionListener(new java.awt.event.ActionListener() {
@@ -209,16 +213,16 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(btnGDCAN);
-        btnGDCAN.setBounds(700, 340, 220, 30);
+        btnGDCAN.setBounds(700, 340, 220, 40);
 
-        btnGTN.setText("Generate Tournament Name");
+        btnGTN.setText("Generate  Name");
         btnGTN.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnGTNActionPerformed(evt);
             }
         });
         lpnlCT.add(btnGTN);
-        btnGTN.setBounds(700, 140, 220, 30);
+        btnGTN.setBounds(700, 140, 220, 40);
 
         cBoxTT.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
         cBoxTT.addActionListener(new java.awt.event.ActionListener() {
@@ -227,7 +231,7 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(cBoxTT);
-        cBoxTT.setBounds(290, 392, 340, 30);
+        cBoxTT.setBounds(290, 392, 340, 40);
 
         cBoxFed.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] {}));
         cBoxFed.addActionListener(new java.awt.event.ActionListener() {
@@ -236,11 +240,11 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(cBoxFed);
-        cBoxFed.setBounds(290, 190, 340, 30);
+        cBoxFed.setBounds(290, 190, 340, 40);
         lpnlCT.add(dtpStart);
-        dtpStart.setBounds(290, 480, 340, 30);
+        dtpStart.setBounds(290, 500, 340, 30);
         lpnlCT.add(dtpEnd);
-        dtpEnd.setBounds(290, 540, 340, 30);
+        dtpEnd.setBounds(290, 560, 340, 30);
 
         btnValidate.setText("Validate Form");
         btnValidate.addActionListener(new java.awt.event.ActionListener() {
@@ -266,23 +270,40 @@ public class CreateTournament extends javax.swing.JFrame {
             }
         });
         lpnlCT.add(sliderRounds);
-        sliderRounds.setBounds(290, 440, 350, 30);
+        sliderRounds.setBounds(290, 450, 340, 30);
 
-        lblRounds.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblRounds.setText("Number of Rounds:");
+        lblRounds.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lpnlCT.add(lblRounds);
-        lblRounds.setBounds(30, 440, 250, 30);
+        lblRounds.setBounds(30, 450, 250, 30);
 
         lblNumRounds.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         lblNumRounds.setText("0");
         lpnlCT.add(lblNumRounds);
         lblNumRounds.setBounds(660, 440, 210, 30);
 
+        btnGenDsAndTs.setText("Generate Start and End DateTime");
+        btnGenDsAndTs.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGenDsAndTsActionPerformed(evt);
+            }
+        });
+        lpnlCT.add(btnGenDsAndTs);
+        btnGenDsAndTs.setBounds(680, 530, 290, 40);
+
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel1.setText("You can either generate the values or enter in your own!");
+        lpnlCT.add(jLabel1);
+        jLabel1.setBounds(290, 110, 350, 30);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lpnlCT, javax.swing.GroupLayout.DEFAULT_SIZE, 1326, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -363,11 +384,11 @@ public class CreateTournament extends javax.swing.JFrame {
             // create tournament
             Tournament t = new Tournament();
             t.setId(id);
-            t.setName(txfName.getText());
-            t.setFederation(Federation.getValueFromName((String) cBoxFed.getSelectedItem()).toString());
-            t.setDirector(txfDirector.getText());
-            t.setChiefArbiter(txfCA.getText());
-            t.setDeputyChiefArbiter(txfDCA.getText());
+            t.setName(txfName.getText().trim());
+            t.setFederation(Federation.getValueFromName((String) cBoxFed.getSelectedItem()).toString().trim());
+            t.setDirector(txfDirector.getText().trim());
+            t.setChiefArbiter(txfCA.getText().trim());
+            t.setDeputyChiefArbiter(txfDCA.getText().trim());
             t.setTournamentType(TournamentType.getValueFromName((String) cBoxTT.getSelectedItem()));
             t.setStartDate(dtpStart.getDateTimeStrict());
             t.setEndDate(dtpEnd.getDateTimeStrict());
@@ -387,8 +408,23 @@ public class CreateTournament extends javax.swing.JFrame {
     }//GEN-LAST:event_btnSubmitActionPerformed
 
     private void sliderRoundsStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderRoundsStateChanged
+        isValid = false; // vars change
         lblNumRounds.setText(sliderRounds.getValue() + "");
     }//GEN-LAST:event_sliderRoundsStateChanged
+
+    private void btnGenDsAndTsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenDsAndTsActionPerformed
+        isValid = false; // vars changed
+        LocalDateTime start = TournamentManager.generateStartDate();
+        LocalDateTime end = TournamentManager.generateEndDate(start, TournamentType.getValueFromName((String) cBoxTT.getSelectedItem()));
+        
+        
+        // set the generated dts into the field
+        dtpStart.datePicker.setDate(start.toLocalDate());
+        dtpStart.timePicker.setTime(start.toLocalTime());
+        
+        dtpEnd.datePicker.setDate(end.toLocalDate());
+        dtpEnd.timePicker.setTime(end.toLocalTime());
+    }//GEN-LAST:event_btnGenDsAndTsActionPerformed
 
     /**
      * @param args the command line arguments
@@ -430,6 +466,7 @@ public class CreateTournament extends javax.swing.JFrame {
     private javax.swing.JButton btnGDCAN;
     private javax.swing.JButton btnGDN;
     private javax.swing.JButton btnGTN;
+    private javax.swing.JButton btnGenDsAndTs;
     private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnSubmit;
     private javax.swing.JButton btnTournamentTab;
@@ -438,6 +475,7 @@ public class CreateTournament extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cBoxTT;
     private com.github.lgooddatepicker.components.DateTimePicker dtpEnd;
     private com.github.lgooddatepicker.components.DateTimePicker dtpStart;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel lblCA;
     private javax.swing.JLabel lblDCA;
     private javax.swing.JLabel lblDirector;
