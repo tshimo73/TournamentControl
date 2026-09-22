@@ -40,7 +40,6 @@ public class Player {
 
     @Override
     public String toString() {
-        // add tournament id save 
         StringBuilder sb = new StringBuilder();
         sb.append("PLAYER").append("#");
         sb.append(id).append("#");

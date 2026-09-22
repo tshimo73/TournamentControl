@@ -1,4 +1,4 @@
-package ui.view.managers;
+package ui.views.managers;
 
 import database.DatabaseManager;
 import entities.GameEntity;

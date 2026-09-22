@@ -21,7 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import ui.TournamentsPage;
-import ui.view.managers.ViewTournamentManager;
+import ui.views.managers.ViewTournamentManager;
 
 public class ViewTournament extends javax.swing.JFrame {
 
