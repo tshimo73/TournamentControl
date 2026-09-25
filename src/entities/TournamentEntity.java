@@ -1,6 +1,7 @@
 
 package entities;
 
+import enums.TournamentType;
 import games.Game;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,6 @@ import java.util.logging.Logger;
 
 public class TournamentEntity extends Entity<Tournament> {
 
-    private final PlayerEntity pe = new PlayerEntity();
     private final GameEntity ge = new GameEntity();
 
     public TournamentEntity() {
@@ -50,8 +50,8 @@ public class TournamentEntity extends Entity<Tournament> {
             stmt.setString(5, ca);
             stmt.setString(6, dca);
             stmt.setInt(7, type.getID());
-            stmt.setTimestamp(8, java.sql.Timestamp.valueOf(start));
-            stmt.setTimestamp(9, java.sql.Timestamp.valueOf(end));
+            stmt.setTimestamp(8, Timestamp.valueOf(start));
+            stmt.setTimestamp(9, Timestamp.valueOf(end));
             stmt.setBoolean(10, hE);
             stmt.setInt(11, rounds);
 
@@ -89,7 +89,6 @@ public class TournamentEntity extends Entity<Tournament> {
 
                     for (int i = 1; i <= meta.getColumnCount(); i++) {
                         row.put(meta.getColumnName(i), rs.getObject(i));
-                        System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
                     }
 
                     Game game = ge.mapRow(row);
@@ -120,8 +119,8 @@ public class TournamentEntity extends Entity<Tournament> {
                 (String) row.get("chief_arbiter"),
                 (String) row.get("deputy_chief_arbiter"),
                 TournamentType.getTypeByID(((Number) row.get("tournament_type_id")).intValue()),
-                ((java.sql.Timestamp) row.get("start_date")).toLocalDateTime(),
-                ((java.sql.Timestamp) row.get("end_date")).toLocalDateTime()
+                ((Timestamp) row.get("start_date")).toLocalDateTime(),
+                ((Timestamp) row.get("end_date")).toLocalDateTime()
         );
 
         t.setId((String) row.get("id"));

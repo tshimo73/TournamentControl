@@ -393,7 +393,7 @@
         </Component>
         <Component class="javax.swing.JButton" name="btnGenDsAndTs">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Generate Start and End DateTime"/>
+            <Property name="text" type="java.lang.String" value="Generate Start and End Dates"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnGenDsAndTsActionPerformed"/>
@@ -406,12 +406,11 @@
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel1">
           <Properties>
-            <Property name="horizontalAlignment" type="int" value="0"/>
             <Property name="text" type="java.lang.String" value="You can either generate the values or enter in your own!"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-              <AbsoluteConstraints x="290" y="110" width="350" height="30"/>
+              <AbsoluteConstraints x="290" y="110" width="420" height="30"/>
             </Constraint>
           </Constraints>
         </Component>

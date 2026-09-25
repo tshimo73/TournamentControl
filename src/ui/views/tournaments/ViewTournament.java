@@ -1,6 +1,8 @@
 package ui.views.tournaments;
 
 import database.DatabaseManager;
+import entities.GameEntity;
+import entities.PlayerEntity;
 import entities.TournamentEntity;
 import enums.Federation;
 import enums.GameResult;
@@ -26,8 +28,8 @@ import ui.views.managers.ViewTournamentManager;
 public class ViewTournament extends javax.swing.JFrame {
 
     private final Tournament t;
-    private Importer importer = null;
-    private final TournamentEntity te = new TournamentEntity();
+    private Importer importer;
+    private PlayerEntity pe = new PlayerEntity();
     private final DefaultTableModel model = new DefaultTableModel();
     private ViewTournamentManager vtm;
 
@@ -114,8 +116,8 @@ public class ViewTournament extends javax.swing.JFrame {
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
-        
-        if(vtm.saveToDB(t)){
+
+        if (vtm.saveToDB(t)) {
             btnSave.setVisible(false);
             this.dispose();
             new TournamentsPage().setVisible(true);
@@ -128,20 +130,16 @@ public class ViewTournament extends javax.swing.JFrame {
             int numGames = 0, numPlayers = 0,
                     numWWins = 0, numBWins = 0, numDraws = 0;
             double drawPercentage = 0.0, aveRating = 0.0;
-            Statement stmt = DatabaseManager.getConn().createStatement();
 
-            // necesary sql queries
+            // can't use the selectWhere() due to the group by needed
             String sqlGames = String.format("SELECT result, count(result) AS [NumGames]"
                     + " FROM tblGames"
                     + " WHERE tournament_id = \"%s\""
-                    + " GROUP BY result", t.getId()),
-                    sqlPlayers = String.format("SELECT count(id) AS [NumPlayers], ROUND(AVG(rating), 2) AS [AvgRating]"
-                            + " FROM tblRegistrations"
-                            + " WHERE tournament_id = \"%s\"", t.getId());
+                    + " GROUP BY result", t.getId());
 
-            ResultSet rsGames = stmt.executeQuery(sqlGames), rsPlayers = stmt.executeQuery(sqlPlayers);
+            Statement stmtGames = DatabaseManager.getConn().createStatement();
+            ResultSet rsGames = stmtGames.executeQuery(sqlGames);
 
-            // the game query
             while (rsGames.next()) {
                 String result = rsGames.getString("result");
                 int wins = rsGames.getInt("NumGames");
@@ -161,21 +159,41 @@ public class ViewTournament extends javax.swing.JFrame {
 
                 }
             }
-            numGames = numWWins + numBWins + numDraws;
-            drawPercentage = numGames > 0 ? ((double) numDraws / (double) numGames) * 100.0 : 0.0; // had to do an if statement, got NaN error (case divided by 0)
 
-            // players qery
-            if (rsPlayers.next()) {
-                numPlayers = rsPlayers.getInt("NumPlayers");
-                aveRating = rsPlayers.getDouble("AvgRating");
+            numGames = numWWins + numBWins + numDraws;
+            drawPercentage = numGames > 0 ? ((double) numDraws / (double) numGames) * 100.0 : 0.0;
+
+            List<HashMap<String, Object>> results = pe.selectWhere(
+                    "tournament_id", "=", t.getId(),
+                    "count(id) AS [NumPlayers]", "AVG(rating) AS [AvgRating]"
+            );
+
+            if (results != null && !results.isEmpty()) {
+                HashMap<String, Object> stats = results.get(0);
+
+                Object avg = stats.get("AvgRating");
+                aveRating = (avg instanceof Number) ? ((Number) avg).doubleValue() : 0.0;
+
+                Object count = stats.get("NumPlayers");
+                numPlayers = (count instanceof Number) ? ((Number) count).intValue() : 0;
+            } else {
+                aveRating = 0.0;
+                numPlayers = 0;
             }
 
             // Set the stats
-            lblAverageRating.setText(String.format("Average Rating: %.2f", aveRating));
-            lblDrawPercentage.setText(String.format("Draw Percentage: %.2f%%", drawPercentage));
+            lblAverageRating.setText(numPlayers > 0 && !Double.isNaN(aveRating)
+                    ? String.format("Average Rating: %.2f", aveRating)
+                    : "Average Rating: N/A");
+
+            lblDrawPercentage.setText(numGames > 0
+                    ? String.format("Draw Percentage: %.2f%%", drawPercentage)
+                    : "Draw Percentage: N/A");
+
             lblNumPlayers.setText(String.format("Number of Players: %d", numPlayers));
             lblTotalGames.setText(String.format("Total Games: %d", numGames));
             lblNumNoDraws.setText(String.format("Number of Decisive Games: %d", numWWins + numBWins));
+
         } catch (SQLException ex) {
             Logger.getLogger(ViewTournament.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -244,9 +262,9 @@ public class ViewTournament extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        lblPOTT.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18)); // NOI18N
         lblPOTT.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblPOTT.setText("Leaderboard");
+        lblPOTT.setText("Leaderboard (Top 20)");
+        lblPOTT.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 18)); // NOI18N
         lpnlVT.add(lblPOTT);
         lblPOTT.setBounds(502, 88, 288, 37);
 

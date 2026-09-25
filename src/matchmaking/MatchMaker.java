@@ -18,11 +18,11 @@ import entities.PlayerEntity;
 public class MatchMaker {
 
     private int round;
-    protected List<Player> players;
-    private final Map<Player, List<Player>> previousOpponents;
-    private final Map<Player, Integer> colourBalance;
-    private final Map<Player, Boolean> hasRecievedBye;
-    private final PlayerEntity PE = new PlayerEntity();
+    private List<Player> players;
+    private Map<Player, List<Player>> previousOpponents;
+    private Map<Player, Integer> colourBalance;
+    private Map<Player, Boolean> hasRecievedBye;
+    private PlayerEntity PE = new PlayerEntity();
     private HashMap<Integer, List<Player>> leaderboardPerRound = new HashMap<>();
     private List<Game> games = new ArrayList<>();
 

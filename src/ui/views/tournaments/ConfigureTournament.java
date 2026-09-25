@@ -80,6 +80,11 @@ public class ConfigureTournament extends javax.swing.JFrame {
         txfNumPlayers.setFont(new java.awt.Font("UD Digi Kyokasho NP", 0, 18)); // NOI18N
         txfNumPlayers.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumPlayers.setText("0");
+        txfNumPlayers.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txfNumPlayersActionPerformed(evt);
+            }
+        });
         getContentPane().add(txfNumPlayers);
         txfNumPlayers.setBounds(276, 113, 90, 50);
 
@@ -176,6 +181,10 @@ public class ConfigureTournament extends javax.swing.JFrame {
     private void tblPlayersPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_tblPlayersPropertyChange
 
     }//GEN-LAST:event_tblPlayersPropertyChange
+
+    private void txfNumPlayersActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfNumPlayersActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txfNumPlayersActionPerformed
 
     private void addPlayer(Player p) {
         if (PE.insert(p)) {

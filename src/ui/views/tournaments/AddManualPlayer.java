@@ -53,12 +53,11 @@ public class AddManualPlayer extends javax.swing.JFrame {
     
     private String checkNameFields(){
         HashMap<String, String> fields = new HashMap<>();
-        fields.put("First Name", txfFN.getText());
-        fields.put("Last Name", txfLN.getText());
-        fields.put("Rating", txfRating.getText());
-        fields.put("Fide ID", txfFID.getText());
+        fields.put("First Name", txfFN.getText().trim());
+        fields.put("Last Name", txfLN.getText().trim());
+        fields.put("Fide ID", txfFID.getText().trim());
         
-        return Validation.isAnyBlank(fields);
+        return Validation.isValidStrings(fields);
     }
     
     private String checkDoubleFields(){
@@ -189,7 +188,7 @@ public class AddManualPlayer extends javax.swing.JFrame {
         lpnlADM.add(btnValidate);
         btnValidate.setBounds(1000, 410, 220, 50);
 
-        btnSubmit.setText("Create Player");
+        btnSubmit.setText("Register Player");
         btnSubmit.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSubmitActionPerformed(evt);
@@ -213,11 +212,11 @@ public class AddManualPlayer extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlADM)
+            .addComponent(lpnlADM, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(lpnlADM)
+            .addComponent(lpnlADM, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
         );
 
         pack();

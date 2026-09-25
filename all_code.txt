@@ -1,0 +1,3057 @@
+
+package database;
+
+import java.sql.*;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class DatabaseManager {
+
+    private final static String DB_NAME = "tournamentcontrol", URL = String.format("jdbc:ucanaccess://%s\\%s.accdb", System.getProperty("user.dir"), DB_NAME);
+    private static Connection conn;
+
+    public DatabaseManager() {}
+
+    /**
+     * Initialises the database
+     */
+    public static void init() {
+                
+        try {
+
+            // System.out.printf("Connecting to database with url (%s)...\n", url);
+            conn = DriverManager.getConnection(URL);
+
+            if (isConnected()) {
+                System.out.println("Connected to database!");
+            } else {
+                System.out.println("Failed to connect to the database.");
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to connect to the database.");
+            ex.printStackTrace();
+        }
+
+    }
+
+    /**
+     * Close the database connection
+     */
+    public static void closeConn() {
+        try {
+            conn.close();
+            System.out.println("Connection to database closed.");
+        } catch (SQLException ex) {
+            Logger.getLogger(DatabaseManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * Get the database connection
+     * @return Connection conn
+     */
+    public static Connection getConn() {
+        return conn;
+    }
+
+    /**
+     * Returns the database connection status (connected / disconnected)
+     * @return database status
+     */
+    private static boolean isConnected() {
+        try {
+            return conn.isValid(0);
+        } catch (SQLException ex) {
+            System.out.println("Error checking if the database is connected");
+            Logger.getLogger(DatabaseManager.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+}
+package entities;
+
+import database.DatabaseManager;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/*
+    I took heavy inspiration from Springboot and Laravel for this. It was really
+    cool and made the coding so much easier so i made my own poor implementation.
+
+    Documentation here will be general since it applies to many classes.
+ */
+/**
+ * Simplfies basic queries to the database and returns results in the wanted
+ * datatype.
+ */
+abstract class Entity<T> { // abstract so this class cannot be instantiated, only used as a parent class.
+
+    private String table;
+
+    /**
+     * Assigned a table name based on the name of the model (Player, Game,
+     * Tournament)
+     *
+     * @param c
+     */
+    public Entity(Class<T> c) {
+        this.table = "tbl" + c.getSimpleName() + "s";
+    }
+
+    /**
+     *
+     * @param c
+     * @param table - custom table name
+     */
+    public Entity(Class<T> c, String table) {
+        this.table = table;
+    }
+
+    /**
+     * Find the row with the specified ID
+     *
+     * @param id - the objects id in the database (id could be an integer or a
+     * string)
+     * @return
+     */
+    public T find(Object id) {
+        try {
+            String sql = "SELECT * FROM " + table + " WHERE id = ?";
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+
+            // setting the id
+            stmt.setObject(1, id);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                ResultSetMetaData meta = rs.getMetaData();
+                Map<String, Object> row = new HashMap<>();
+
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+
+                return mapRow(row);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NullPointerException ex) {
+            System.out.println("Database Connection not found");
+        }
+
+        return null;
+
+    }
+
+    /**
+     * Returns all rows from a table in the database
+     *
+     * @return List of rows (results)
+     */
+    public List<T> getAll() {
+        List<T> rows = new ArrayList<>();
+
+        try {
+            String sql = "SELECT * FROM " + table;
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                ResultSetMetaData meta = rs.getMetaData();
+                Map<String, Object> row = new HashMap<>();
+
+                //AI helped me with this loop
+                // i didn't know the methods in the ResultSetMetaData class
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    row.put(meta.getColumnName(i), rs.getObject(i));
+                }
+
+                T result = mapRow(row);
+
+                rows.add(result);
+
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NullPointerException ex) {
+            System.out.println("Database Connection not found");
+        }
+
+        return rows;
+    }
+
+    /**
+     * Deletes a row with a specified id from a table in the database
+     *
+     * @param id
+     * @return
+     */
+    public boolean delete(Object id) {
+        String sql = String.format("DELETE FROM %s WHERE id = ?", table);
+
+        try {
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+
+            stmt.setObject(1, id);
+
+            if (stmt.executeUpdate() == 1) {
+                System.out.println("Element has been successfully deleted from the database.");
+                return true;
+            } else {
+                return false;
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Error deleting row from " + table);
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+
+    /**
+     * A method i made to update records in a table with ease
+     *
+     * @param id - The ID of the updated row
+     * @param attrs
+     * @return
+     */
+    public T update(Object id, Map<String, Object> attrs) {
+        try {
+            // really happy with how this turned out
+            //had to use stringbuilder to append the attributes, normal strings
+            // didnt want to work in the lambda cause they 'had to be final'
+            StringBuilder sql = new StringBuilder();
+            sql.append(String.format("UPDATE %s SET ", table));
+
+            attrs.forEach((key, value) -> {
+                if (value instanceof String) {
+                    sql.append(String.format("%s = \"%s\", ", key, value));
+                } else {
+                    sql.append(String.format("%s = %s, ", key, value));
+                }
+            });
+
+            sql.deleteCharAt(sql.length() - 2); // to get rid of the comma and space at the end.
+            sql.append(" WHERE id = ?");
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql.toString());
+            stmt.setObject(1, id);
+
+            if (stmt.executeUpdate() > 0) {
+                String selectSql = String.format("SELECT * FROM %s WHERE id = ?", table);
+                PreparedStatement selectStmt = DatabaseManager.getConn().prepareStatement(selectSql);
+                selectStmt.setObject(1, id);
+                ResultSet rs = selectStmt.executeQuery();
+
+                if (rs.next()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    Map<String, Object> row = new HashMap<>();
+
+                    for (int i = 1; i <= meta.getColumnCount(); i++) {
+                        row.put(meta.getColumnName(i), rs.getObject(i));
+                    }
+
+                    return mapRow(row);
+                } else {
+                    return null;
+                }
+
+            } else {
+                return null;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+
+    }
+
+    // i discovered the ... parameter thing today, really cool.
+    // other than the required parameters it allows for an 'infinite' amount of optional
+    // parameters that get put into an array.
+    public List<HashMap<String, Object>> selectWhere(String field, String operation, Object answer, String... fieldsToSelect) {
+        // i did it this way because i'm not selecting all the rows,
+        // with the hashmap i can get specific about what exactly i want to get
+        // i.e. I only select id and date of birth
+        // i can get them specifically from the hashmap and typecast them
+
+        List<HashMap<String, Object>> rowsOfResults = new ArrayList<>();
+
+        List<String> operations = List.of("=", ">", "<", "<>");
+
+        // joining them fields to add to the select statement
+        String fields = (fieldsToSelect.length == 0)
+                ? "*" : String.join(", ", fieldsToSelect);
+
+        try {
+            boolean isAllowedOp = operations.contains(operation) || "LIKE".equalsIgnoreCase(operation);
+            if (!isAllowedOp) {
+                System.out.println("No SQL statement could be made");
+                return null;
+            }
+
+            String sql = String.format("SELECT %s FROM %s WHERE %s %s ?",
+                    fields, getTable(), field, operation);
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+
+            // i was unsure of the answers data typeS
+            stmt.setObject(1, answer);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                HashMap<String, Object> row = new HashMap<>();
+                ResultSetMetaData meta = rs.getMetaData();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    // in the case of derived or custom labelled fields
+                    // found that with getColumnName() query made fields 
+                    // returned null
+                    String colName = meta.getColumnLabel(i);
+                    if (colName == null || colName.isBlank()) {
+                        colName = meta.getColumnName(i);
+                    }
+                    row.put(colName, rs.getObject(i));
+                }
+
+                rowsOfResults.add(row);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to get results");
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return rowsOfResults;
+    }
+
+    /**
+     * Deletes all rows from the database
+     */
+    public void deleteAll() {
+        try {
+            String sql = "DELETE * FROM " + table;
+
+            Statement stmt = DatabaseManager.getConn().createStatement();
+
+            int affected = stmt.executeUpdate(sql);
+
+            if (affected > 0) {
+                System.out.println("Successfully deleted all records from " + table);
+            } else if (affected == 0) {
+                System.out.println("No records deleted from " + table);
+            } else {
+                System.out.println("Failed to delete all records from " + table);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to delete all records from " + table);
+            Logger.getLogger(Entity.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    protected abstract T mapRow(Map<String, Object> row);
+
+    /**
+     * Gets the name of the table
+     *
+     * @return table
+     */
+    public String getTable() {
+        return table;
+    }
+
+}
+
+package entities;
+
+import database.DatabaseManager;
+import enums.GameResult;
+import java.util.Map;
+import games.*;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class GameEntity extends Entity<Game>{
+    private final PlayerEntity pe = new PlayerEntity();
+
+    public GameEntity() {
+        super(Game.class);
+    }
+
+    /**
+     * Inserts a game into the tblGames table
+     * @param g - Game to be inserted
+     * @return - success or failure of insertion
+     */
+    public boolean insert(Game g) {
+        try {
+            // extract values from class
+            String tID = g.getTournament().getId(), result = g.getResult().getScore(),
+                    opening = g.getOpening(), wFID = g.getWhite().getFideID(),
+                    bFID = g.getBlack().getFideID();
+            int roundNum = g.getRound();
+            
+            String sql = String.format("INSERT INTO %s (tournament_id, round_number,"
+                    + " white_player_id, black_player_id, result, opening) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)", getTable());
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            stmt.setString(1, tID);
+            stmt.setInt(2, roundNum);
+            stmt.setString(3, wFID);
+            stmt.setString(4, bFID);
+            stmt.setString(5, result);
+            stmt.setString(6, opening);
+
+            if (stmt.executeUpdate() > 0) {
+                System.out.println(String.format("Inserted game: W(%s) vs B(%s)", g.getWhite().getFullName(), g.getBlack().getFullName()));
+                return true;
+            } else {
+                System.out.println("game not inserted");
+                return false;
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to insert game.");
+            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    } 
+    
+    /**
+     * Maps the results into the Game object
+     * @param row
+     * @return 
+     */
+    @Override
+    public Game mapRow(Map<String, Object> row){
+        Game game = new Game();
+        
+        game.setBlack(pe.findByFideID((String) row.get("black_player_id")));
+        game.setWhite(pe.findByFideID((String) row.get("white_player_id")));
+        
+        String result = (String) row.get("result");
+        game.setResult(GameResult.getResultFromScore(result));
+        game.setRound((int) row.get("round_number"));
+        
+        return game;
+        
+    }
+    
+    
+    
+}
+
+package entities;
+
+import database.DatabaseManager;
+import java.sql.*;
+import java.util.Map;
+import players.*;
+import enums.PlayerTitle;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class PlayerEntity extends Entity<Player> {
+
+    public PlayerEntity() {
+        super(Player.class, "tblRegistrations");
+    }
+
+    /**
+     * Inserts the player into the tblRegistrations table in the database
+     * @param p - the player to be inserted
+     * @return the success or failure of the insertion
+     */
+    public boolean insert(Player p) {
+        try {
+            // extract values from class
+            String tID = p.getTournamentID();
+            PlayerTitle title = p.getTitle();
+            String fN = p.getFirstName(), lN = p.getLastName(), fID = p.getFideID(),
+                    fed = p.getFederation();
+            double r = p.getRating(), score = p.getScore(), tb = p.getTieBreak();
+            String sql = String.format("INSERT INTO %s (tournament_id, first_name, last_name"
+                    + ", fide_id, federation, rating, score, tiebreak, title) VALUES"
+                    + "(?, ?, ?, ?, ?, ?, ?, ?, ?)", getTable());
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            stmt.setString(1, tID);
+            stmt.setString(2, fN);
+            stmt.setString(3, lN);
+            stmt.setString(4, fID);
+            stmt.setString(5, fed);
+            stmt.setDouble(6, r);
+            stmt.setDouble(7, score);
+            stmt.setDouble(8, tb);
+            stmt.setString(9, title.toString());
+
+            if (stmt.executeUpdate() > 0) {
+                System.out.println("Inserted: " + p.getFullName());
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to insert user.");
+            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+
+    /**
+     * Finds player by their FIDE ID. Returns the first--which should be the
+     * only--player
+     *
+     * @param fID
+     * @return
+     */
+    public Player findByFideID(String fID) {
+        // Words cannot express how happy I am with this method (the select where)
+        List<HashMap<String, Object>> playerRows = selectWhere("fide_id", "=", fID);
+
+        if (playerRows == null || playerRows.isEmpty()) {
+            return null;
+        }
+
+        return mapRow(playerRows.getFirst());
+    }
+
+    /**
+     * Maps the results into the Player object
+     * @param row
+     * @return 
+     */
+    @Override
+    public Player mapRow(Map<String, Object> row) {
+        Player p = new Player();
+
+        // 'Number' used because the numbers in the DB were casted as Double
+        // Couldn't find an Integer data type on access so i stuck with this
+        p.setId(((Number) row.get("id")).intValue());
+        p.setTournamentID((String) row.get("tournament_id"));
+        p.setFirstName((String) row.get("first_name"));
+        p.setLastName((String) row.get("last_name"));
+        p.setFideID((String) row.get("fide_id"));
+        p.setFederation((String) row.get("federation"));
+        p.setRating(((Number) row.get("rating")).doubleValue());
+        p.setScore(((Number) row.get("score")).doubleValue());
+        p.setTieBreak(((Number) row.get("tiebreak")).doubleValue());
+
+        String title = (String) row.get("title");
+        p.setTitle(title.equals("N/A") ? PlayerTitle.NoTitle : PlayerTitle.valueOf(title));
+
+        return p;
+    }
+
+}
+
+package entities;
+
+import enums.TournamentType;
+import games.Game;
+import java.util.List;
+import java.util.Map;
+import tournaments.*;
+import database.DatabaseManager;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class TournamentEntity extends Entity<Tournament> {
+
+    private final GameEntity ge = new GameEntity();
+
+    public TournamentEntity() {
+        super(Tournament.class);
+    }
+
+    /**
+     * Inserts the tournament into the tblTournaments table in the database
+     * @param t
+     * @return 
+     */
+    public boolean insert(Tournament t) {
+        try {
+            // extract values from class
+            String id = t.getId(), dir = t.getDirector(), ca = t.getChiefArbiter(),
+                    dca = t.getDeputyChiefArbiter(), fed = t.getFederation(),
+                    name = t.getName();
+            int rounds = t.getRounds();
+            TournamentType type = t.getTournamentType();
+            LocalDateTime start = t.getStartDate(), end = t.getEndDate();
+            boolean hE = t.hasEnded();
+
+            String sql = String.format("INSERT INTO %s (id, name, federation,"
+                    + " director, chief_arbiter, deputy_chief_arbiter, tournament_type_id,"
+                    + " start_date, end_date, has_ended, rounds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", getTable());
+
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            stmt.setString(1, id);
+            stmt.setString(2, name);
+            stmt.setString(3, fed);
+            stmt.setString(4, dir);
+            stmt.setString(5, ca);
+            stmt.setString(6, dca);
+            stmt.setInt(7, type.getID());
+            stmt.setTimestamp(8, java.sql.Timestamp.valueOf(start));
+            stmt.setTimestamp(9, java.sql.Timestamp.valueOf(end));
+            stmt.setBoolean(10, hE);
+            stmt.setInt(11, rounds);
+
+            if (stmt.executeUpdate() > 0) {
+                System.out.println("Inserted: " + name);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SQLException ex) {
+            System.out.println("Failed to insert tournament.");
+            Logger.getLogger(PlayerEntity.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+
+    /**
+     * Gets the games played in this tournament from the database.
+     * @param id - the tournaments id
+     * @return the list of games played in the tournament
+     */
+    public List<Game> getGames(String id) {
+        List<Game> games = new ArrayList<>();
+        try {
+            String sql = "SELECT * FROM tblGames WHERE tournament_id = ?";
+            PreparedStatement stmt = DatabaseManager.getConn().prepareStatement(sql);
+            stmt.setString(1, id);
+
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+
+            if (meta.getColumnCount() >= 1) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+
+                    for (int i = 1; i <= meta.getColumnCount(); i++) {
+                        row.put(meta.getColumnName(i), rs.getObject(i));
+                        System.out.println(meta.getColumnName(i) + ": " + rs.getObject(i));
+                    }
+
+                    Game game = ge.mapRow(row);
+                    games.add(game);
+
+                }
+            } else {
+                return null;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(TournamentEntity.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return games;
+    }
+
+    /**
+     * Maps the query results into the tournament object
+     * @param row - row of attributes
+     * @return the tournament object
+     */
+    @Override
+    protected Tournament mapRow(Map<String, Object> row) {
+        Tournament t = new Tournament(
+                (String) row.get("name"),
+                (String) row.get("federation"),
+                (String) row.get("director"),
+                (String) row.get("chief_arbiter"),
+                (String) row.get("deputy_chief_arbiter"),
+                TournamentType.getTypeByID(((Number) row.get("tournament_type_id")).intValue()),
+                ((Timestamp) row.get("start_date")).toLocalDateTime(),
+                ((Timestamp) row.get("end_date")).toLocalDateTime()
+        );
+
+        t.setId((String) row.get("id"));
+        t.setRounds(((Number) row.get("rounds")).intValue());
+
+        return t;
+    }
+}
+package enums;
+
+/**
+ * The enum of chess federations
+ * @author tshim
+ */
+public enum Federation {
+    AFG("Afghanistan"),
+    ALB("Albania"),
+    ALG("Algeria"),
+    AND("Andorra"),
+    ANG("Angola"),
+    ANT("Antigua and Barbuda"),
+    ARG("Argentina"),
+    ARM("Armenia"),
+    ARU("Aruba"),
+    AUS("Australia"),
+    AUT("Austria"),
+    AZE("Azerbaijan"),
+    BAH("Bahamas"),
+    BAN("Bangladesh"),
+    BAR("Barbados"),
+    BDI("Burundi"),
+    BEL("Belgium"),
+    BER("Bermuda"),
+    BHU("Bhutan"),
+    BIH("Bosnia and Herzegovina"),
+    BIZ("Belize"),
+    BLR("Belarus"),
+    BOL("Bolivia"),
+    BOT("Botswana"),
+    BRA("Brazil"),
+    BRN("Bahrain"),
+    BRU("Brunei Darussalam"),
+    BUL("Bulgaria"),
+    BUR("Burkina Faso"),
+    CAF("Central African Republic"),
+    CAM("Cambodia"),
+    CAN("Canada"),
+    CAY("Cayman Islands"),
+    CGO("Congo"),
+    CHA("Chad"),
+    CHI("Chile"),
+    CHN("China"),
+    CIV("Ivory Coast"),
+    CMR("Cameroon"),
+    COD("DR Congo"),
+    COL("Colombia"),
+    COM("Comoros"),
+    CPV("Cape Verde"),
+    CRC("Costa Rica"),
+    CRO("Croatia"),
+    CUB("Cuba"),
+    CUR("Curaçao"),
+    CYP("Cyprus"),
+    CZE("Czech Republic"),
+    DEN("Denmark"),
+    DJI("Djibouti"),
+    DMA("Dominica"),
+    DOM("Dominican Republic"),
+    ECU("Ecuador"),
+    EGY("Egypt"),
+    ENG("England"),
+    ERI("Eritrea"),
+    ESA("El Salvador"),
+    ESP("Spain"),
+    EST("Estonia"),
+    ETH("Ethiopia"),
+    FAI("Faroe Islands"),
+    FIJ("Fiji"),
+    FIN("Finland"),
+    FRA("France"),
+    GAB("Gabon"),
+    GAM("Gambia"),
+    GCI("Guernsey"),
+    GEO("Georgia"),
+    GEQ("Equatorial Guinea"),
+    GER("Germany"),
+    GHA("Ghana"),
+    GRE("Greece"),
+    GRL("Greenland"),
+    GRN("Grenada"),
+    GUA("Guatemala"),
+    GUI("Guinea"),
+    GUM("Guam"),
+    GUY("Guyana"),
+    HAI("Haiti"),
+    HKG("Hong Kong"),
+    HON("Honduras"),
+    HUN("Hungary"),
+    INA("Indonesia"),
+    IND("India"),
+    IOM("Isle of Man"),
+    IRI("Iran"),
+    IRL("Ireland"),
+    IRQ("Iraq"),
+    ISL("Iceland"),
+    ISR("Israel"),
+    ISV("US Virgin Islands"),
+    ITA("Italy"),
+    IVB("British Virgin Islands"),
+    JAM("Jamaica"),
+    JCI("Jersey"),
+    JOR("Jordan"),
+    JPN("Japan"),
+    KAZ("Kazakhstan"),
+    KEN("Kenya"),
+    KGZ("Kyrgyzstan"),
+    KIR("Kiribati"),
+    KOR("South Korea"),
+    KOS("Kosovo"),
+    KSA("Saudi Arabia"),
+    KUW("Kuwait"),
+    LAO("Laos"),
+    LAT("Latvia"),
+    LBA("Libya"),
+    LBN("Lebanon"),
+    LBR("Liberia"),
+    LCA("Saint Lucia"),
+    LES("Lesotho"),
+    LIE("Liechtenstein"),
+    LTU("Lithuania"),
+    LUX("Luxembourg"),
+    MAC("Macau"),
+    MAD("Madagascar"),
+    MAR("Morocco"),
+    MAS("Malaysia"),
+    MAW("Malawi"),
+    MDA("Moldova"),
+    MDV("Maldives"),
+    MEX("Mexico"),
+    MGL("Mongolia"),
+    MHL("Marshall Islands"),
+    MKD("North Macedonia"),
+    MLI("Mali"),
+    MLT("Malta"),
+    MNC("Monaco"),
+    MNE("Montenegro"),
+    MOZ("Mozambique"),
+    MRI("Mauritius"),
+    MTN("Mauritania"),
+    MYA("Myanmar"),
+    NAM("Namibia"),
+    NCA("Nicaragua"),
+    NCL("New Caledonia"),
+    NED("Netherlands"),
+    NEP("Nepal"),
+    NGR("Nigeria"),
+    NIG("Niger"),
+    NOR("Norway"),
+    NRU("Nauru"),
+    NZL("New Zealand"),
+    OMA("Oman"),
+    PAK("Pakistan"),
+    PAN("Panama"),
+    PAR("Paraguay"),
+    PER("Peru"),
+    PHI("Philippines"),
+    PLE("Palestine"),
+    PLW("Palau"),
+    PNG("Papua New Guinea"),
+    POL("Poland"),
+    POR("Portugal"),
+    PRK("North Korea"),
+    PRT("Portugal"),
+    PUR("Puerto Rico"),
+    QAT("Qatar"),
+    ROU("Romania"),
+    RSA("South Africa"),
+    RUS("Russia"),
+    RWA("Rwanda"),
+    SCO("Scotland"),
+    SEN("Senegal"),
+    SEY("Seychelles"),
+    SGP("Singapore"),
+    SKN("Saint Kitts and Nevis"),
+    SLE("Sierra Leone"),
+    SLO("Slovenia"),
+    SMR("San Marino"),
+    SOL("Solomon Islands"),
+    SOM("Somalia"),
+    SRB("Serbia"),
+    SRI("Sri Lanka"),
+    SSD("South Sudan"),
+    STP("São Tomé and Príncipe"),
+    SUD("Sudan"),
+    SUI("Switzerland"),
+    SUR("Suriname"),
+    SVK("Slovakia"),
+    SWE("Sweden"),
+    SWZ("Eswatini"),
+    SYR("Syria"),
+    TAN("Tanzania"),
+    TGA("Tonga"),
+    THA("Thailand"),
+    TJK("Tajikistan"),
+    TKM("Turkmenistan"),
+    TLS("Timor-Leste"),
+    TOG("Togo"),
+    TPE("Chinese Taipei"),
+    TTO("Trinidad and Tobago"),
+    TUN("Tunisia"),
+    TUR("Turkey"),
+    UAE("United Arab Emirates"),
+    UGA("Uganda"),
+    UKR("Ukraine"),
+    URU("Uruguay"),
+    USA("United States"),
+    UZB("Uzbekistan"),
+    VAN("Vanuatu"),
+    VEN("Venezuela"),
+    VIE("Vietnam"),
+    VIN("Saint Vincent and the Grenadines"),
+    WLS("Wales"),
+    YEM("Yemen"),
+    ZAM("Zambia"),
+    ZIM("Zimbabwe");
+
+    private final String countryName;
+
+    Federation(String countryName) {
+        this.countryName = countryName;
+    }
+
+    public static Federation getValueFromName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+
+        for (Federation fed : values()) {
+            if (fed.getCountryName().equalsIgnoreCase(name.trim())) {
+                return fed;
+            }
+        }
+
+        return null;
+    }
+
+    public String getCountryName() {
+        return countryName;
+    }
+}
+
+package enums;
+/*
+    I just learned that it's not good to hard code every single value, makes
+    it much harder to change later. So this is to make things easier for myself
+    incase i want to make changes in the future.
+*/
+
+/**
+ * The enum of line types in imported .tctrl files
+ * @author tshim
+ */
+public enum FileTitle {
+    TOURNAMENT, PLAYER, GAME, END;
+}
+
+package enums;
+
+/**
+ * Enum of game results
+ * @author tshim
+ */
+public enum GameResult {
+    WHITE_WIN("1-0"),
+    DRAW("0.5-0.5"),
+    BLACK_WIN("0-1"),
+    INVALID("Invalid Game Result");
+
+    private final String score;
+
+    GameResult(String score) {
+        this.score = score;
+    }
+
+    public String getScore() {
+        return this.score;
+    }
+
+    public static GameResult getResultFromScore(String score) {
+        switch (score.trim()) {
+            case "1-0": 
+                return WHITE_WIN;
+            case "0-1": 
+                return BLACK_WIN;
+            case "0.5-0.5":
+                return DRAW;
+            default: 
+                return INVALID;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return this.score;
+    }
+}package enums;
+
+import utils.Random;
+
+public enum PlayerTitle {
+
+    NoTitle, NM, CM, FM, IM, GM;
+
+    public String getFullTitle() {
+        switch (this) {
+            case NoTitle:
+                return "Regular Player";
+            case NM:
+                return "National Master";
+            case CM:
+                return "Candidate Master";
+            case FM:
+                return "FIDE Master";
+            case IM:
+                return "International Master";
+            case GM:
+                return "Grandmaster";
+            default:
+                return "N/A";
+        }
+    }
+
+    public static PlayerTitle getRandomTitle() {
+        PlayerTitle[] titles = PlayerTitle.values();
+        int length = titles.length;
+        int randomNumber = Random.getRandomInt(0, length - 1);
+
+        return titles[randomNumber];
+    }
+    
+
+    public static PlayerTitle getTitleFromRating(double rating) {
+        if (rating < 2100) {
+            return PlayerTitle.NoTitle;
+        } else if (rating < 2200) {
+            return PlayerTitle.NM;
+        } else if (rating < 2300) {
+            return PlayerTitle.CM;
+        } else if (rating < 2400) {
+            return PlayerTitle.FM;
+        } else if (rating < 2500) {
+            return PlayerTitle.IM;
+        } else {
+            return PlayerTitle.GM;
+        }
+    }
+
+    public double getRating() {
+        switch (this) {
+            case NoTitle:
+                return Random.getRandomDouble(1000, 2099);
+            case NM:
+                return Random.getRandomDouble(2100, 2199);
+            case CM:
+                return Random.getRandomDouble(2200, 2299);
+            case FM:
+                return Random.getRandomDouble(2300, 2399);
+            case IM:
+                return Random.getRandomDouble(2400, 2499);
+            case GM:
+                return Random.getRandomDouble(2500, 2900);
+            default:
+                return Random.getRandomDouble(100, 999);
+        }
+    }
+    
+    @Override
+    public String toString() {
+        switch (this) {
+            case NM:
+                return "NM";
+            case CM:
+                return "CM";
+            case FM:
+                return "FM";
+            case IM:
+                return "IM";
+            case GM:
+                return "GM";
+            default:
+                return "N/A";
+        }
+    }
+}
+package enums;
+
+import utils.Random;
+
+/**
+ * The enum of the types of tournaments
+ *
+ * @author tshim
+ */
+public enum TournamentType {
+    CLASSICAL, RAPID, BLITZ, BULLET, HYPERBULLET, INVALID;
+
+    /**
+     * Gets the time control of the tournament
+     *
+     * @return
+     */
+    public String getTimeControl() {
+        switch (this) {
+            case CLASSICAL:
+                return "90+30"; // 90 Minutes, add 30 seconds per move
+            case RAPID:
+                return "15+10"; // 15 Minutes, add 10 seconds per move
+            case BLITZ:
+                return "3+2"; // 3 Minutes, add 2 seconds per move
+            case BULLET:
+                return "2+1"; // 2 Minutes, add 1 second per move
+            case HYPERBULLET:
+                return "0.5"; // Half a minute
+            default:
+                return "Invalid Tournament Type";
+        }
+    }
+
+    /*
+        Only found out that you could do enums like
+            ENUM("description") a while afterwards.
+     */
+    /**
+     * Gets the name
+     *
+     * @return the name
+     */
+    public String getName() {
+        switch (this) {
+            case CLASSICAL:
+                return "Classical";
+            case RAPID:
+                return "Rapid";
+            case BLITZ:
+                return "Blitz";
+            case BULLET:
+                return "Bullet";
+            case HYPERBULLET:
+                return "HyperBullet";
+            default:
+                return "Invalid Tournament Type";
+        }
+    }
+
+    /**
+     * Gets the DB ID of the enum
+     *
+     * @return
+     */
+    public int getID() {
+        switch (this) {
+            case CLASSICAL:
+                return 1;
+            case RAPID:
+                return 2;
+            case BLITZ:
+                return 3;
+            case BULLET:
+                return 4;
+            case HYPERBULLET:
+                return 5;
+            default:
+                return -1;
+        }
+    }
+
+    /**
+     * Get number of rounds including players based on time control
+     *
+     * @param numPlayers
+     * @return
+     */
+    public int getRounds(int numPlayers) {
+        if (numPlayers <= 0) {
+            throw new IllegalArgumentException("Player count must be positive");
+        }
+
+        // Swiss system: rounds = ceil(log2(numPlayers))
+        int swissRounds = (int) Math.ceil(Math.log(numPlayers) / Math.log(2));
+
+        // Cap it against the format's fixed maximum
+        return Math.min(swissRounds, getRounds());
+    }
+
+    /**
+     * Get number of rounds based on time control
+     *
+     * @return
+     */
+    public int getRounds() {
+        switch (this) {
+            case CLASSICAL:
+                return 9;
+            case RAPID:
+                return 13;
+            case BLITZ:
+                return 15;
+            case BULLET:
+                return 20;
+            case HYPERBULLET:
+                return 30;
+
+            default:
+                return 5;
+        }
+    }
+
+    /**
+     * Generates a tournament random type
+     *
+     * @return the generated type
+     */
+    public static TournamentType getRandomType() { // Returns a random tournament type
+        TournamentType[] types = TournamentType.values();
+        int length = types.length;
+        int randomNumber = Random.getRandomInt(0, length - 1);
+
+        return types[randomNumber];
+    }
+
+    /**
+     * Gets the type by ID
+     *
+     * @param id
+     * @return
+     */
+    public static TournamentType getTypeByID(int id) {
+        switch (id) {
+            case 1:
+                return CLASSICAL;
+            case 2:
+                return RAPID;
+            case 3:
+                return BLITZ;
+            case 4:
+                return BULLET;
+            case 5:
+                return HYPERBULLET;
+            default:
+                return INVALID;
+        }
+    }
+
+    /**
+     * Gets the tournament type from the name
+     * @param name
+     * @return 
+     */
+    public static TournamentType getValueFromName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+
+        for (TournamentType type : values()) {
+            if (type.getName().equalsIgnoreCase(name.trim())) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return this.getName();
+    }
+}
+
+package filing;
+
+/**
+ * Thrown when an imported file has the wrong extension. 
+ * i.e. (.txt) instead of (.tctrl)
+ * @author tshim
+ */
+public class InvalidFileExtensionException extends Exception {
+
+    /**
+     * Creates a new instance of <code>InvalidFileExtensionException</code> without
+     * detail message.
+     */
+    public InvalidFileExtensionException() {
+    }
+
+    /**
+     * Constructs an instance of <code>InvalidFileExtensionException</code> with the
+     * specified detail message.
+     *
+     * @param msg the detail message.
+     */
+    public InvalidFileExtensionException(String msg) {
+        super(msg);
+    }
+}
+package games;
+
+import enums.GameResult;
+import players.Player;
+import tournaments.Tournament;
+
+public class Game {
+
+    private int id, round;
+    private Tournament tournament;
+    private Player white, black;
+    private String opening;
+    private GameResult result;
+    private boolean hasEnded = false;
+
+    public Game(Tournament t, int r, Player w, Player b, String o) {
+        this.tournament = t;
+        this.round = r;
+        this.white = w;
+        this.black = b;
+        this.opening = o;
+    }
+
+    public Game() {
+    }
+
+    /**
+     * Randomly generates the game's results
+     *
+     * @return the game
+     */
+    public Game generateResult() {
+        return GameManager.generateResult(this);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("GAME").append("#");
+        sb.append(id).append("#");
+        sb.append(round).append("#");
+        sb.append(tournament.getId()).append("#");
+        sb.append(white.getFideID()).append("#");
+        sb.append(black.getFideID()).append("#");
+        sb.append(result).append("#");
+        sb.append(opening);
+        return sb.toString();
+    }
+
+    public boolean hasEnded() {
+        return hasEnded;
+    }
+
+    public boolean isDraw() {
+        return result.equals(GameResult.DRAW);
+    }
+    
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Player getWhite() {
+        return white;
+    }
+
+    public void setWhite(Player white) {
+        this.white = white;
+    }
+
+    public Player getBlack() {
+        return black;
+    }
+
+    public void setBlack(Player black) {
+        this.black = black;
+    }
+
+    public int getRound() {
+        return round;
+    }
+
+    public void setRound(int round) {
+        this.round = round;
+    }
+
+    public GameResult getResult() {
+        return result;
+    }
+
+    public void setResult(GameResult result) {
+        this.result = result;
+        hasEnded = true;
+    }
+
+    public String getOpening() {
+        return opening;
+    }
+
+    public void setOpening(String opening) {
+        this.opening = opening;
+    }
+
+    public Tournament getTournament() {
+        return tournament;
+    }
+
+    public void setTournament(Tournament tournament) {
+        this.tournament = tournament;
+    }
+
+}
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+
+package games;
+
+import enums.GameResult;
+import net.datafaker.Faker;
+import players.Player;
+import tournaments.Tournament;
+
+
+public class GameManager {
+
+    private static final Faker F = new Faker();
+    private GameManager(){}
+    
+    /**
+     * Generates a game with custom players
+     * @param w
+     * @param b
+     * @param t
+     * @param round
+     * @return 
+     */
+    public static Game generateGame(Player w, Player b, Tournament t, int round){ 
+        String o = F.chess().opening();
+        Game game = new Game(t, round, w, b, o);
+        return game;
+    }
+    
+    public static Game generateResult(Game g){
+        boolean hasEnded = g.hasEnded();
+        Player white = g.getWhite(), black = g.getBlack();
+        if (!hasEnded) {
+            String score;
+            double res = Math.random(), whiteCurrentPoints = white.getScore(),
+                    blackCurrentPoints = black.getScore(), wTB = white.getTieBreak(),
+                    bTB = black.getTieBreak();
+
+            if (res > 0.55) { // 45% chance to win-- white players first
+                score = "1-0"; // white wins
+                white.setScore(whiteCurrentPoints + 1);
+                white.setTieBreak(wTB + black.getRating());
+            } else if (res >= 0.35) {
+                score = "0.5-0.5"; // they game has been drawn
+                black.setScore(blackCurrentPoints + 0.5);
+                white.setScore(whiteCurrentPoints + 0.5);
+
+                black.setTieBreak(bTB + white.getRating() * 0.5);
+                white.setTieBreak(wTB + black.getRating() * 0.5);
+            } else {
+                score = "0-1"; // black wins
+                black.setScore(blackCurrentPoints + 1);
+                black.setTieBreak(bTB + white.getRating());
+            }
+
+            g.setResult(GameResult.getResultFromScore(score));
+            hasEnded = true;
+            return g;
+        } else {
+            return g;
+        }
+    }
+}
+package jframeconfig;
+
+import com.formdev.flatlaf.FlatDarkLaf;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Insets;
+import java.time.format.DateTimeFormatter;
+import javax.swing.ImageIcon;
+import javax.swing.UIManager;
+
+/**
+ * GUI CONFIGURATIONS Configures the GUI frames so i don't have to put in the
+ * same exact lines on every single frame.
+ *
+ * Made so my GUI classes can look cleaner
+ *
+ * @author tshim
+ */
+public class Config {
+
+    /**
+     * Done by Gemini, and a dependancy (FlatLaf)
+     * to at least beautify the UI a little bit.
+     */
+    // Runs once when the first UI loads Config
+    static {
+        // 1. Install Base Dark Theme
+        FlatDarkLaf.setup();
+
+        // 2. Global Typography
+        Font baseFont = new Font("UD Digi Kyokasho NK", Font.PLAIN, 14);
+        Font boldFont = new Font("UD Digi Kyokasho NK", Font.BOLD, 14);
+        UIManager.put("defaultFont", baseFont);
+
+        // 3. Accent & Focus Glow (Emerald / Chess Green)
+        Color chessGreen = new Color(0x2E, 0xCC, 0x71);
+        UIManager.put("Component.accentColor", chessGreen);
+        UIManager.put("Component.focusWidth", 2);
+        UIManager.put("Component.innerFocusWidth", 0);
+
+        // 4. Buttons (Pill/Rounded, Modern Spacing)
+        UIManager.put("Button.arc", 12);
+        UIManager.put("Button.font", boldFont);
+        UIManager.put("Button.margin", new Insets(8, 18, 8, 18));
+
+        // 5. Text Fields, Password Boxes, & Spinners
+        UIManager.put("TextComponent.arc", 10);
+        UIManager.put("TextField.margin", new Insets(6, 10, 6, 10));
+
+        // 6. Combo Boxes (Dropdowns)
+        UIManager.put("ComboBox.arc", 10);
+        UIManager.put("ComboBox.padding", new Insets(4, 8, 4, 8));
+
+        // 7. Tables (Instant styling for all tournament & player tables)
+        UIManager.put("Table.rowHeight", 28);
+        UIManager.put("Table.showHorizontalLines", true);
+        UIManager.put("Table.showVerticalLines", false);
+        UIManager.put("Table.intercellSpacing", new java.awt.Dimension(0, 1));
+        UIManager.put("Table.alternateRowColor", new Color(0x2B, 0x2D, 0x3A));
+        UIManager.put("TableHeader.font", new Font("Segoe UI", Font.BOLD, 13));
+        UIManager.put("TableHeader.separatorColor", new Color(0x3E, 0x44, 0x51));
+
+        // 8. Scrollbars (Slim and modern)
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.width", 10);
+
+        // 9. Popups & Dialogs (JOptionPane styling)
+        UIManager.put("OptionPane.messageFont", baseFont);
+        UIManager.put("OptionPane.buttonFont", boldFont);
+
+        // 10. Native Dark Window Title Bars (Windows 10/11)
+        UIManager.put("TitlePane.useWindowDecorations", true);
+
+        // --- RICH BACKGROUND PALETTE (Midnight Navy / Slate Chess Theme) ---
+        Color appBackground = new Color(0x1B, 0x1E, 0x2B); // Deep navy canvas (replaces pure black)
+        Color cardSurface = new Color(0x25, 0x29, 0x3A); // Elevated panels & containers
+        Color inputSurface = new Color(0x1E, 0x21, 0x30); // Input background
+        Color accentEmerald = new Color(0x2E, 0xCC, 0x71); // Chess green accent
+        Color subtleBorder = new Color(0x36, 0x3B, 0x52); // Subtle separator lines
+
+// Window & Panel Backgrounds everywhere
+        UIManager.put("Panel.background", appBackground);
+        UIManager.put("Viewport.background", appBackground);
+        UIManager.put("ScrollPane.background", appBackground);
+
+// Input & Dropdown Field Backgrounds
+        UIManager.put("TextField.background", inputSurface);
+        UIManager.put("ComboBox.background", inputSurface);
+        UIManager.put("FormattedTextField.background", inputSurface);
+        UIManager.put("PasswordField.background", inputSurface);
+
+// Accent & Border Highlights
+        UIManager.put("Component.accentColor", accentEmerald);
+        UIManager.put("Component.borderColor", subtleBorder);
+        UIManager.put("Component.focusedBorderColor", accentEmerald);
+
+// Table Styling (Zebra contrast)
+        UIManager.put("Table.background", cardSurface);
+        UIManager.put("Table.alternateRowColor", new Color(0x20, 0x24, 0x33));
+        UIManager.put("Table.gridColor", new Color(0x2D, 0x32, 0x46));
+        UIManager.put("TableHeader.background", inputSurface);
+    }
+
+    // everything else (below) was odone by me
+    
+    // frame settings
+    private static final String PROJECT_NAME = "Tournament Control";
+    private static final int FRAME_WIDTH = 1338, FRAME_HEIGHT = 707;
+
+    // Tournament Control's Logo
+    private static final ImageIcon ICON = new ImageIcon(Config.class.getResource("/images/TC_Logo.png"));
+
+    // Date Time Format
+    public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    //get a specific image
+    public static ImageIcon getImage(String imageName) {
+        return new ImageIcon(Config.class.getResource("/images/" + imageName));
+    }
+
+    //get the projects icon
+    public static ImageIcon getIcon() {
+        return ICON;
+    }
+
+    public static java.awt.Font getFont() {
+        // a font a liked
+        // snipped from the Netbeans generated code, after i found it in
+        // the font drop down.
+        return new java.awt.Font("UD Digi Kyokasho NK", 1, 24);
+    }
+
+    /**
+     * Sets the frame attributes Made to reduce repeated lines across GUIs
+     *
+     * @param frame
+     * @param title
+     */
+    public static void setAttributes(javax.swing.JFrame frame, String title) {
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setIconImage(ICON.getImage());
+        frame.setTitle(title);
+        frame.setLocationRelativeTo(frame);
+
+        frame.getContentPane().setBackground(new Color(0x1B, 0x1E, 0x2B)); // help from gemini
+    }
+
+    public static void setAttributes(javax.swing.JFrame frame) {
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setIconImage(ICON.getImage());
+        frame.setTitle(PROJECT_NAME);
+        frame.setLocationRelativeTo(frame);
+
+        frame.getContentPane().setBackground(new Color(0x1B, 0x1E, 0x2B)); // help from gemini
+    }
+}
+package matchmaking;
+
+import games.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import players.*;
+import tournaments.Tournament;
+import entities.PlayerEntity;
+import net.datafaker.Faker;
+
+/**
+ * The MatchMaker class handles all the matchmaking and pairings of the
+ * tournament
+ *
+ * @author tshim
+ */
+public class MatchMaker {
+
+    private int round;
+    private List<Player> players;
+    private final Map<Player, List<Player>> previousOpponents;
+    private final Map<Player, Integer> colourBalance;
+    private final Map<Player, Boolean> hasRecievedBye;
+    private final PlayerEntity PE = new PlayerEntity();
+    private HashMap<Integer, List<Player>> leaderboardPerRound = new HashMap<>();
+    private List<Game> games = new ArrayList<>();
+
+    public MatchMaker(List<Player> ps, int round) {
+        this.players = ps;
+        this.round = round;
+        this.previousOpponents = new HashMap<>();
+        this.colourBalance = new HashMap<>();
+        this.hasRecievedBye = new HashMap<>();
+
+        for (Player p : players) {
+            previousOpponents.put(p, new ArrayList<>());
+            colourBalance.put(p, 0);
+            hasRecievedBye.put(p, false);
+        }
+    }
+
+    /**
+     * Generates a Tournament round.
+     *
+     * @param t the tournament
+     *
+     * @return the games generated for that round
+     */
+    public List<Game> generateRound(Tournament t) {
+        List<Game> roundGames = new ArrayList<>();
+        List<Player> availablePlayers = new ArrayList<>(players);
+
+        // 1. A BYE only ever happens if the total player count is ODD!
+        // At most ONE player per round can receive a BYE.
+        if (availablePlayers.size() % 2 != 0) {
+            Player byeCandidate = selectByePlayer(availablePlayers);
+            if (byeCandidate != null) {
+                assignBye(byeCandidate);
+                availablePlayers.remove(byeCandidate);
+            }
+        }
+
+        // 2. Build score groups ONLY from the remaining even pool of players
+        List<List<Player>> scoreGroups = buildScoreGroups(availablePlayers);
+        List<Player> leftover = new ArrayList<>();
+
+        for (List<Player> group : scoreGroups) {
+            // Carry down unpaired players from upper score bracket
+            group.addAll(0, leftover);
+            leftover.clear();
+
+            // Pair players within this group and collect anyone who could not be paired
+            List<Player> unpartnered = new ArrayList<>();
+            roundGames.addAll(pairGroup(group, t, unpartnered));
+
+            // Any leftovers cascade down to the next score bracket
+            leftover.addAll(unpartnered);
+        }
+
+        // 3. Fallback: If strict group matching left an unresolved pair, force-pair them
+        while (leftover.size() >= 2) {
+            Player p1 = leftover.remove(0);
+            Player p2 = leftover.remove(0);
+            roundGames.add(createGame(p1, p2, t));
+        }
+
+        // my code
+        updateScoresAndTieBreaks();
+        leaderboardPerRound.put(round, getLeaderBoardSnapshot());
+        games.addAll(roundGames);
+
+        return roundGames;
+    }
+
+    /**
+     * Selects the lowest-ranked player who hasn't had a BYE yet.
+     */
+    private Player selectByePlayer(List<Player> candidates) {
+        // Sort ascending (lowest score first)
+        List<Player> sorted = new ArrayList<>(candidates);
+        sorted.sort((p1, p2) -> Double.compare(p1.getScore(), p2.getScore()));
+
+        for (Player p : sorted) {
+            if (!hasRecievedBye.getOrDefault(p, false)) {
+                return p;
+            }
+        }
+        // If everyone somehow had a bye, pick the lowest ranked player
+        return sorted.get(0);
+    }
+
+    /**
+     * Gives the unpaired player a BYE
+     *
+     * @param p
+     */
+    private void assignBye(Player p) {
+        // In chess, a BYE gives 1.0 point (win by forfeit/no pairing)
+        p.setScore(p.getScore() + 1.0);
+        hasRecievedBye.put(p, true);
+        System.out.println("Player " + p.getFullName() + " received a BYE for Round " + round);
+    }
+
+    private List<Game> pairGroup(List<Player> group, Tournament t, List<Player> unpartnered) {
+        List<Game> games = new ArrayList<>();
+        List<Player> pool = new ArrayList<>(group);
+
+        while (pool.size() >= 2) {
+            Player a = pool.remove(0);
+            Player bestMatch = null;
+            int bestMatchIndex = -1;
+
+            // Find first player 'a' hasn't played against yet
+            for (int j = 0; j < pool.size(); j++) {
+                Player candidate = pool.get(j);
+                if (!hasPlayed(a, candidate)) {
+                    bestMatch = candidate;
+                    bestMatchIndex = j;
+                    break;
+                }
+            }
+
+            // If no unique opponent found in group, pair with the next available
+            if (bestMatch == null) {
+                // If this is the only pair left, accept rematch or mark for cascade
+                if (pool.size() == 1) {
+                    bestMatch = pool.get(0);
+                    bestMatchIndex = 0;
+                } else {
+                    // Send player 'a' to cascade down to the next bracket
+                    unpartnered.add(a);
+                    continue;
+                }
+            }
+
+            pool.remove(bestMatchIndex);
+            games.add(createGame(a, bestMatch, t));
+        }
+
+        // Remaining odd player gets passed down
+        unpartnered.addAll(pool);
+        return games;
+    }
+
+    private Game createGame(Player a, Player b, Tournament t) {
+        previousOpponents.get(a).add(b);
+        previousOpponents.get(b).add(a);
+
+        Game game = assignColours(a, b, t);
+        game.setRound(round);
+        return game.generateResult();
+    }
+
+    /**
+     * Have the players played against each other
+     *
+     * @param a - player 1
+     * @param b - player 2
+     * @return yes/no
+     */
+    private boolean hasPlayed(Player a, Player b) {
+        return previousOpponents.get(a) != null && previousOpponents.get(a).contains(b);
+    }
+
+    /**
+     * Assigns the players colours
+     *
+     * @param a - player 1
+     * @param b - player 2
+     * @param t - the tournament the game is played in
+     * @return the game
+     */
+    private Game assignColours(Player a, Player b, Tournament t) {
+        int balanceA = colourBalance.getOrDefault(a, 0);
+        int balanceB = colourBalance.getOrDefault(b, 0);
+
+        Player white, black;
+
+        if (balanceA < balanceB) {
+            white = a;
+            black = b;
+        } else if (balanceA > balanceB) {
+            white = b;
+            black = a;
+        } else {
+            white = a.getRating() >= b.getRating() ? a : b;
+            black = (white == a) ? b : a;
+        }
+
+        colourBalance.put(white, colourBalance.get(white) + 1);
+        colourBalance.put(black, colourBalance.get(black) - 1);
+
+        return GameManager.generateGame(white, black, t, round);
+    }
+
+    /**
+     * Groups players based on their score
+     *
+     * @param playerPool - the players
+     * @return list of players in their score groups
+     */
+    private List<List<Player>> buildScoreGroups(List<Player> playerPool) {
+        Player[] sorted = playerPool.toArray(new Player[0]);
+
+        for (int i = 0; i < sorted.length - 1; i++) {
+            for (int j = i + 1; j < sorted.length; j++) {
+                if (sorted[i].getScore() == sorted[j].getScore()) {
+                    if (sorted[i].getTieBreak() < sorted[j].getTieBreak()) {
+                        Player temp = sorted[i];
+                        sorted[i] = sorted[j];
+                        sorted[j] = temp;
+                    }
+                } else if (sorted[i].getScore() < sorted[j].getScore()) {
+                    Player temp = sorted[i];
+                    sorted[i] = sorted[j];
+                    sorted[j] = temp;
+                }
+            }
+        }
+
+        List<List<Player>> groups = new ArrayList<>();
+        List<Player> current = new ArrayList<>();
+
+        for (Player p : sorted) {
+            if (!current.isEmpty() && p.getScore() != current.get(0).getScore()) {
+                groups.add(current);
+                current = new ArrayList<>();
+            }
+            current.add(p);
+        }
+        if (!current.isEmpty()) {
+            groups.add(current);
+        }
+        return groups;
+    }
+
+    /**
+     * Gets the leaderboard
+     * @return 
+     */
+    private List<Player> getLeaderBoard() {
+        Player[] leaderboard = players.toArray(new Player[0]);
+        for (int i = 0; i < leaderboard.length - 1; i++) {
+            for (int j = i + 1; j < leaderboard.length; j++) {
+                if (leaderboard[i].getScore() == leaderboard[j].getScore()) {
+                    if (leaderboard[i].getTieBreak() < leaderboard[j].getTieBreak()) {
+                        Player temp = leaderboard[i];
+                        leaderboard[i] = leaderboard[j];
+                        leaderboard[j] = temp;
+                    }
+                } else if (leaderboard[i].getScore() < leaderboard[j].getScore()) {
+                    Player temp = leaderboard[i];
+                    leaderboard[i] = leaderboard[j];
+                    leaderboard[j] = temp;
+                }
+            }
+        }
+        return List.of(leaderboard);
+    }
+
+    /**
+     * Gets the leaderboard of a specific round
+     * @param round - the round played
+     * @return  - the leaderboard
+     */
+    public List<Player> getLeaderboardForRound(int round) {
+        return leaderboardPerRound.get(round);
+    }
+
+    /*
+    Had an issue when getting the leaderboards of certain rounds - the scores 
+    and tiebreaks only reflected the latest rounds. 
+    It turns out that java updates those same player objects with the updates rounds
+    since its in memory, so i had to create a 'snapshot' of the leaderboards
+     */
+    
+    /**
+     * Returns a snapshot of the leaderboard
+     * @return 
+     */
+    private List<Player> getLeaderBoardSnapshot() {
+        List<Player> snap = new ArrayList<>();
+
+        for (Player p : getLeaderBoard()) {
+            snap.add(new Player(p));
+        }
+
+        return snap;
+    }
+
+    /**
+     * Calculates Buchholz tiebreak scores (sum of opponents' scores) and
+     * persists changes using PlayerEntity's existing update method.
+     */
+    private void updateScoresAndTieBreaks() {
+        for (Player p : players) {
+            double buchholz = 0.0;
+            List<Player> opponents = previousOpponents.getOrDefault(p, new ArrayList<>());
+
+            for (Player opponent : opponents) {
+                buchholz += opponent.getScore();
+            }
+
+            p.setTieBreak(buchholz);
+
+            // Use the existing Entity update method with PlayerFields enum keys
+            HashMap<String, Object> attrs = new HashMap<>();
+            attrs.put("score", p.getScore());
+            attrs.put("tiebreak", p.getTieBreak());
+
+            PE.update(p.getId(), attrs);
+        }
+
+        System.out.println("Updated scores and tiebreaks");
+    }
+
+    /**
+     * Returns all the games simulated in the tournament (Mainly for the
+     * Exporter class)
+     *
+     * @return
+     */
+    public List<Game> getGames() {
+        return games;
+    }
+
+    public int getRound() {
+        return round;
+    }
+
+    public void setRound(int round) {
+        this.round = round;
+    }
+}
+
+package players;
+
+import enums.PlayerTitle;
+
+public class Player {
+    private int id;
+    private String firstName, lastName, fideID, federation, tournamentID;
+    private double rating, score = 0.0, tieBreak = 0.0;
+    private PlayerTitle title;
+    
+    public Player(int id, String fN, String lN, String FID, String fed, double rat, PlayerTitle t){
+        this.id = id;
+        this.firstName = fN;
+        this.lastName = lN;
+        this.fideID = FID;
+        this.federation = fed;
+        this.rating = rat;
+        this.title = t;
+    }
+    /**
+     * Needed to create the snapshots for the matchmaker leaderboards
+     */
+    public Player(Player playerSnap){
+        id = playerSnap.getId();
+        firstName = playerSnap.getFirstName();
+        lastName = playerSnap.getLastName();
+        rating = playerSnap.getRating();
+        score = playerSnap.getScore();
+        tieBreak = playerSnap.getTieBreak();
+        federation = playerSnap.getFederation();
+        title = playerSnap.getTitle();
+    }
+    
+    public Player(){}
+    
+    public static Player generatePlayer(){
+        return PlayerManager.generatePlayer();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("PLAYER").append("#");
+        sb.append(id).append("#");
+        sb.append(firstName).append("#");
+        sb.append(lastName).append("#");
+        sb.append(fideID).append("#");
+        sb.append(federation).append("#");
+        sb.append(rating).append("#");
+        sb.append(title).append("#");
+        sb.append(score).append("#");
+        sb.append(tieBreak).append("#");    
+        return sb.toString();
+    }
+
+   
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+    
+    public String getFullName(){
+        return this.firstName + " " + this.lastName;
+    }
+
+    public String getFideID() {
+        return fideID;
+    }
+
+    public void setFideID(String fideID) {
+        this.fideID = fideID;
+    }
+
+    public String getFederation() {
+        return federation;
+    }
+
+    public void setFederation(String federation) {
+        this.federation = federation;
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
+
+    public PlayerTitle getTitle() {
+        return title;
+    }
+
+    public void setTitle(PlayerTitle title) {
+        this.title = title;
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
+    }
+
+    public double getTieBreak() {
+        return tieBreak;
+    }
+
+    public void setTieBreak(double tieBreak) {
+        this.tieBreak = tieBreak;
+    }
+    
+    public void setTournamentID(String tID){
+        this.tournamentID = tID;
+    }
+    
+    public String getTournamentID(){
+        return tournamentID;
+    }
+    
+    
+    
+    
+    
+}
+
+package players;
+
+import enums.*;
+import utils.*;
+import net.datafaker.*;
+
+public class PlayerManager {
+    private static final Faker F = new Faker();
+    private PlayerManager(){} // Private so the class cannot be instantiated
+    
+    /**
+     * Generates a random player
+     * @return the generated player
+     */
+    public static Player generatePlayer(){
+        
+        int id = Random.getRandomInt(1, 99999999);
+        PlayerTitle title = PlayerTitle.getRandomTitle();
+        
+        Federation[] feds = Federation.values();
+        int rand = Random.getRandomInt(0, feds.length - 1);
+        
+        Player p = new Player(id, F.name().firstName(), F.name().lastName(),
+                          id + "", feds[rand].toString(),
+                       title.getRating(), title);
+        p.setTournamentID(null);
+        return p;
+    }
+    
+}
+
+package tournaments;
+
+import enums.TournamentType;
+import entities.TournamentEntity;
+import java.time.LocalDateTime;
+import players.Player;
+import games.Game;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Tournament {
+
+    private String name, federation, director, chiefArbiter, deputyChiefArbiter, id;
+    private TournamentType tournamentType;
+    private LocalDateTime startDate, endDate;
+    private int rounds;
+    private List<Player> players = new ArrayList<>();
+    private List<Game> games = new ArrayList<>();
+    private boolean isImported = false, hasEnded = false;
+
+
+    /**
+     * Tournament with players and games set
+     *
+     * @param name
+     * @param federation
+     * @param director
+     * @param chiefArbiter
+     * @param deputyChiefArbiter
+     * @param tournamentType
+     * @param startDate
+     * @param endDate
+     * @param players
+     * @param games
+     */
+    public Tournament(String name, String federation, String director, String chiefArbiter, String deputyChiefArbiter, TournamentType tournamentType, LocalDateTime startDate, LocalDateTime endDate, List<Player> players, List<Game> games) {
+        this.name = name;
+        this.federation = federation;
+        this.director = director;
+        this.chiefArbiter = chiefArbiter;
+        this.deputyChiefArbiter = deputyChiefArbiter;
+        this.tournamentType = tournamentType;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.players = players;
+        this.games = games;
+    }
+
+    /**
+     * Tournament without players or games set
+     *
+     * @param name
+     * @param federation
+     * @param director
+     * @param chiefArbiter
+     * @param deputyChiefArbiter
+     * @param tournamentType
+     * @param startDate
+     * @param endDate
+     */
+    public Tournament(String name, String federation, String director, String chiefArbiter, String deputyChiefArbiter, TournamentType tournamentType, LocalDateTime startDate, LocalDateTime endDate) {
+        this.name = name;
+        this.federation = federation;
+        this.director = director;
+        this.chiefArbiter = chiefArbiter;
+        this.deputyChiefArbiter = deputyChiefArbiter;
+        this.tournamentType = tournamentType;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+    public Tournament() {
+    }
+
+    
+    public boolean hasEnded() {
+        return hasEnded;
+    }
+
+    public void setHasEnded(boolean hasEnded) {
+        this.hasEnded = hasEnded;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getFederation() {
+        return federation.toUpperCase();
+    }
+
+    public void setFederation(String federation) {
+        this.federation = federation;
+    }
+
+    public String getDirector() {
+        return director;
+    }
+
+    public void setDirector(String director) {
+        this.director = director;
+    }
+
+    public String getChiefArbiter() {
+        return chiefArbiter;
+    }
+
+    public void setChiefArbiter(String chiefArbiter) {
+        this.chiefArbiter = chiefArbiter;
+    }
+
+    public String getDeputyChiefArbiter() {
+        return deputyChiefArbiter;
+    }
+
+    public void setDeputyChiefArbiter(String deputyChiefArbiter) {
+        this.deputyChiefArbiter = deputyChiefArbiter;
+    }
+
+    public TournamentType getTournamentType() {
+        return tournamentType;
+    }
+
+    public void setTournamentType(TournamentType tournamentType) {
+        this.tournamentType = tournamentType;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
+
+    public int getRounds() {
+        return rounds;
+    }
+
+    public void setRounds(int rounds) {
+        this.rounds = rounds;
+    }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(List<Player> players) {
+        this.players = players;
+    }
+
+    public List<Game> getGames() {
+        return games;
+    }
+
+    public void setGames(List<Game> games) {
+        this.games = games;
+    }
+
+    public boolean getIsImported() {
+        return isImported;
+    }
+
+    public void setIsImported(boolean isImported) {
+        this.isImported = isImported;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("TOURNAMENT").append("#");
+        sb.append(id).append("#");
+        sb.append(name).append("#");
+        sb.append(federation).append("#");
+        sb.append(director).append("#");
+        sb.append(chiefArbiter).append("#");
+        sb.append(deputyChiefArbiter).append("#");
+        sb.append(tournamentType).append("#");
+        sb.append(startDate).append("#");
+        sb.append(endDate).append("#");
+        sb.append(rounds);
+
+        return sb.toString();
+    }
+
+}
+
+package tournaments;
+
+import enums.TournamentType;
+import java.time.LocalDateTime;
+import java.util.Map;
+import utils.Random;
+
+public class TournamentManager {
+
+    // made with claude
+    private static final int MAX_DAYS_UNTIL_START = 180;
+
+    // made with claude
+    private static final Map<TournamentType, int[]> DURATION_RANGES = Map.of(
+            TournamentType.RAPID, new int[]{1, 3},
+            TournamentType.BLITZ, new int[]{1, 2},
+            TournamentType.CLASSICAL, new int[]{7, 14},
+            TournamentType.BULLET, new int[]{1, 1},
+            TournamentType.HYPERBULLET, new int[]{1, 1}
+    );
+
+    // made with claude and me
+    /**
+     * Generates a start time
+     * @return 
+     */
+    public static LocalDateTime generateStartDate() {
+        int daysFromNow = Random.getRandomInt(0, MAX_DAYS_UNTIL_START) + 1;
+        int hour = 9 + Random.getRandomInt(0, 4); // start between 9am and 12pm
+        return LocalDateTime.now()
+                .plusDays(daysFromNow)
+                .withHour(hour)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+    }
+
+    // made with claude and me
+    /**
+     * Generates an end date time based on the start datetime and the tournament type
+     * @param start the start datetime
+     * @param type the tournament type
+     * @return 
+     */
+    public static LocalDateTime generateEndDate(LocalDateTime start, TournamentType type) {
+        int[] range = DURATION_RANGES.getOrDefault(type, new int[]{3, 7});
+        int duration = range[0] + Random.getRandomInt(0, range[1] - range[0] + 1);
+        return start.plusDays(duration).withHour(18); // ends at 6pm on final day
+    }
+
+}
+
+package ui;
+
+
+import jframeconfig.Config;
+import database.DatabaseManager;
+
+public class Main extends javax.swing.JFrame {
+    Config cf = new Config();
+    
+    
+    public Main() {
+        initComponents();
+        DatabaseManager.init();
+        Config.setAttributes(this);
+        
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        lpnlMain = new javax.swing.JLayeredPane();
+        btnTournamentTab = new javax.swing.JButton();
+        lblBackground = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnTournamentTab.setText("Tournaments");
+        btnTournamentTab.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTournamentTabActionPerformed(evt);
+            }
+        });
+        lpnlMain.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlMain.add(btnTournamentTab);
+        btnTournamentTab.setBounds(540, 10, 230, 40);
+
+        lblBackground.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/TC Hero.png"))); // NOI18N
+        lpnlMain.add(lblBackground);
+        lblBackground.setBounds(0, 0, 1358, 707);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(lpnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(lpnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
+        this.dispose();
+        new TournamentsPage().setVisible(true);
+    }//GEN-LAST:event_btnTournamentTabActionPerformed
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(Main.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(Main.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(Main.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(Main.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        
+        // Force Java to use legacy sorting to prevent the JFileChooser Windows bug
+        // System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
+        
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new Main().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnTournamentTab;
+    private javax.swing.JLabel lblBackground;
+    private javax.swing.JLayeredPane lpnlMain;
+    // End of variables declaration//GEN-END:variables
+}
+package ui;
+
+import entities.GameEntity;
+import entities.PlayerEntity;
+import entities.TournamentEntity;
+import enums.Federation;
+import filing.InvalidFileExtensionException;
+import filing.importer.Importer;
+import java.util.List;
+import javax.swing.table.DefaultTableModel;
+import jframeconfig.Config;
+import tournaments.Tournament;
+import java.io.File;
+import javax.swing.JOptionPane;
+import ui.views.tournaments.ViewTournament;
+
+public class TournamentsPage extends javax.swing.JFrame {
+    private TournamentEntity te = new TournamentEntity();
+    private DefaultTableModel model;
+    private String[] tblTournamentFields = {"Name", "Federation", "Director", "Rounds",
+        "Type", "Start Date", "End Date"};
+
+    /**
+     * Creates new form TournamentsPage
+     */
+    public TournamentsPage() {
+        initComponents();
+        Config.setAttributes(this, "Tournaments");
+
+        //set up the table to hold the tournaments and makes it so cells arent editable
+        model = new DefaultTableModel(tblTournamentFields, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        
+        List<Tournament> tournaments = te.getAll();
+        
+        for (Tournament t : tournaments) {
+            addTournament(t);
+        }
+        
+        tblTournaments.setModel(model);
+
+        // help claude help me with this function -- makes it so when you 
+        // double click the row, it'll take you to view the selected tournament
+        // i researched how it works, it's like a way to 'instantiate'
+        // abstract classes
+        // pretty cool
+        tblTournaments.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int row = tblTournaments.getSelectedRow();
+                    TournamentsPage.this.dispose();
+                    new ViewTournament(tournaments.get(row)).setVisible(true);
+                }
+            }
+        });
+    }
+    
+    private void addTournament(Tournament t){
+        model.addRow(new Object[]{
+                t.getName(),
+                Federation.valueOf(t.getFederation()).getCountryName(),
+                t.getDirector(),
+                t.getRounds(),
+                t.getTournamentType().getName(),
+                t.getStartDate().format(Config.DTF),
+                t.getEndDate().format(Config.DTF)
+            });
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        lpnlTournamentPage = new javax.swing.JLayeredPane();
+        spnlTable = new javax.swing.JScrollPane();
+        tblTournaments = new javax.swing.JTable();
+        btnHomeTab = new javax.swing.JButton();
+        btnCreateTournament = new javax.swing.JButton();
+        btnImportTournament = new javax.swing.JButton();
+        btnClear = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        tblTournaments.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        spnlTable.setViewportView(tblTournaments);
+
+        lpnlTournamentPage.add(spnlTable);
+        spnlTable.setBounds(20, 200, 1280, 460);
+
+        btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnHomeTab.setText("Home");
+        btnHomeTab.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHomeTabActionPerformed(evt);
+            }
+        });
+        lpnlTournamentPage.setLayer(btnHomeTab, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTournamentPage.add(btnHomeTab);
+        btnHomeTab.setBounds(530, 20, 230, 40);
+
+        btnCreateTournament.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnCreateTournament.setText("Create");
+        btnCreateTournament.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCreateTournamentActionPerformed(evt);
+            }
+        });
+        lpnlTournamentPage.setLayer(btnCreateTournament, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTournamentPage.add(btnCreateTournament);
+        btnCreateTournament.setBounds(530, 120, 230, 40);
+
+        btnImportTournament.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnImportTournament.setText("Import");
+        btnImportTournament.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnImportTournamentActionPerformed(evt);
+            }
+        });
+        lpnlTournamentPage.setLayer(btnImportTournament, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTournamentPage.add(btnImportTournament);
+        btnImportTournament.setBounds(770, 70, 230, 40);
+
+        btnClear.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
+        btnClear.setText("Clear All");
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnClearActionPerformed(evt);
+            }
+        });
+        lpnlTournamentPage.setLayer(btnClear, javax.swing.JLayeredPane.PALETTE_LAYER);
+        lpnlTournamentPage.add(btnClear);
+        btnClear.setBounds(300, 70, 220, 40);
+
+        jLabel1.setText("Double click a tournament row to view it!");
+        lpnlTournamentPage.add(jLabel1);
+        jLabel1.setBounds(30, 160, 290, 30);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 1338, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(lpnlTournamentPage, javax.swing.GroupLayout.DEFAULT_SIZE, 707, Short.MAX_VALUE)
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed
+        this.dispose();
+        new ui.Main().setVisible(true);
+    }//GEN-LAST:event_btnHomeTabActionPerformed
+
+    private void btnCreateTournamentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCreateTournamentActionPerformed
+        this.dispose();
+        new ui.views.tournaments.CreateTournament().setVisible(true);
+    }//GEN-LAST:event_btnCreateTournamentActionPerformed
+
+    private void btnImportTournamentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportTournamentActionPerformed
+        // I kept getting an exception because my JFileChooser wasnt working
+        // Apparently its something to do with my system and that there is a 
+        // know error about it
+        // So i had to ask AI to help me replicate something similar
+
+        /*
+        Heres the exception i kept getting: 
+        Exception in thread "AWT-EventQueue-0" java.lang.IllegalArgumentException: Comparison method violates its general contract!
+	at java.base/java.util.ComparableTimSort.mergeHi(ComparableTimSort.java:870)
+	at java.base/java.util.ComparableTimSort.mergeAt(ComparableTimSort.java:487)
+	at java.base/java.util.ComparableTimSort.mergeForceCollapse(ComparableTimSort.java:426)
+	at java.base/java.util.ComparableTimSort.sort(ComparableTimSort.java:222)
+	at java.base/java.util.Arrays.sort(Arrays.java:1041)
+	at java.desktop/sun.awt.shell.Win32ShellFolderManager2.get(Win32ShellFolderManager2.java:319)
+	at java.desktop/sun.awt.shell.ShellFolder.get(ShellFolder.java:272)
+	at java.desktop/sun.swing.plaf.synth.SynthFileChooserUIImpl$DirectoryComboBoxModel.addItem(SynthFileChooserUIImpl.java:770)
+	at java.desktop/sun.swing.plaf.synth.SynthFileChooserUIImpl.doDirectoryChanged(SynthFileChooserUIImpl.java:563)
+	at java.desktop/sun.swing.plaf.synth.SynthFileChooserUI$SynthFCPropertyChangeListener.propertyChange(SynthFileChooserUI.java:283)
+	at java.desktop/java.beans.PropertyChangeSupport.fire(PropertyChangeSupport.java:343)
+	at java.desktop/java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:335)
+	at java.desktop/java.beans.PropertyChangeSupport.firePropertyChange(PropertyChangeSupport.java:268)
+	at java.desktop/java.awt.Component.firePropertyChange(Component.java:8717)
+	at java.desktop/javax.swing.JFileChooser.setCurrentDirectory(JFileChooser.java:610)
+	at java.desktop/javax.swing.JFileChooser.<init>(JFileChooser.java:364)
+	at java.desktop/javax.swing.JFileChooser.<init>(JFileChooser.java:310)
+	at ui.tabbedPanels.TournamentsPage.btnImportTournamentActionPerformed(TournamentsPage.java:173)
+	at ui.tabbedPanels.TournamentsPage$5.actionPerformed(TournamentsPage.java:135)
+	at java.desktop/javax.swing.AbstractButton.fireActionPerformed(AbstractButton.java:1972)
+	at java.desktop/javax.swing.AbstractButton$Handler.actionPerformed(AbstractButton.java:2314)
+	at java.desktop/javax.swing.DefaultButtonModel.fireActionPerformed(DefaultButtonModel.java:407)
+	at java.desktop/javax.swing.DefaultButtonModel.setPressed(DefaultButtonModel.java:262)
+	at java.desktop/javax.swing.plaf.basic.BasicButtonListener.mouseReleased(BasicButtonListener.java:279)
+	at java.desktop/java.awt.Component.processMouseEvent(Component.java:6621)
+	at java.desktop/javax.swing.JComponent.processMouseEvent(JComponent.java:3398)
+	at java.desktop/java.awt.Component.processEvent(Component.java:6386)
+	at java.desktop/java.awt.Container.processEvent(Container.java:2266)
+	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4996)
+	at java.desktop/java.awt.Container.dispatchEventImpl(Container.java:2324)
+	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4828)
+	at java.desktop/java.awt.LightweightDispatcher.retargetMouseEvent(Container.java:4948)
+	at java.desktop/java.awt.LightweightDispatcher.processMouseEvent(Container.java:4575)
+	at java.desktop/java.awt.LightweightDispatcher.dispatchEvent(Container.java:4516)
+	at java.desktop/java.awt.Container.dispatchEventImpl(Container.java:2310)
+	at java.desktop/java.awt.Window.dispatchEventImpl(Window.java:2780)
+	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4828)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:775)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:720)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:714)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:98)
+	at java.desktop/java.awt.EventQueue$5.run(EventQueue.java:747)
+	at java.desktop/java.awt.EventQueue$5.run(EventQueue.java:745)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:744)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
+         */
+        
+        // I left the comments it made so that i can understand what it was doing
+        
+        // 1. Force the file manager to look at a clean folder path to stop the crash loop
+        System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
+
+        // 2. Find the window that holds this page
+        java.awt.Window parentWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
+        java.awt.Frame parentFrame = null;
+        if (parentWindow instanceof java.awt.Frame frame) {
+            parentFrame = frame;
+        }
+
+        // 3. Open a native operating system file dialogue (Bypasses Synth entirely)
+        java.awt.FileDialog fileDialog = new java.awt.FileDialog(parentFrame, "Import Tournament", java.awt.FileDialog.LOAD);
+
+        // 4. (Optional) Set it to start in your current project folder instead of the glitched Desktop
+        fileDialog.setDirectory(System.getProperty("user.dir"));
+
+        //this has been done by me
+        fileDialog.setIconImage(Config.getIcon().getImage());
+
+        // 5. Make the dialog visible (this pauses execution until the user selects a file or cancels)
+        fileDialog.setVisible(true);
+
+        // 6. Grab the results safely
+        String directory = fileDialog.getDirectory();
+        String filename = fileDialog.getFile();
+        
+        if (directory != null && filename != null) {
+            try {
+                // This creates your final File object cleanly
+                File file = new File(directory, filename);
+                
+                System.out.println("File loaded successfully: " + file.getAbsolutePath());
+
+                // This part has been done by me.
+                Importer im = new Importer(file);
+                im.scanFile();
+                Tournament t = im.getLoadedTournament();
+                t.setIsImported(true);
+                this.dispose();
+                
+                ui.views.tournaments.ViewTournament page = new ui.views.tournaments.ViewTournament(t, im);
+                page.setVisible(true);
+                
+            } catch (InvalidFileExtensionException ex) {
+                System.out.println(ex.getMessage());
+            }
+        } else {
+            System.out.println("User cancelled the file selection.");
+        }
+    }//GEN-LAST:event_btnImportTournamentActionPerformed
+
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+        String s = "Are you sure that you want to delete the app?\nThis action cannot be reverted"
+                + "\nClicking 'YES' will delete all the tournaments, games, and players";
+        int res = JOptionPane.showConfirmDialog(this, s, "Delete Data", JOptionPane.YES_NO_OPTION);
+        
+        if(res == JOptionPane.YES_OPTION){
+            PlayerEntity pe = new PlayerEntity();
+            GameEntity ge = new GameEntity();
+            
+            ge.deleteAll();
+            pe.deleteAll();
+            te.deleteAll();
+            
+            System.out.println("Successfully deleted app data.");
+            
+            // reset page
+            this.dispose();
+            new TournamentsPage().setVisible(true);
+        }
+    }//GEN-LAST:event_btnClearActionPerformed
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(TournamentsPage.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(TournamentsPage.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(TournamentsPage.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(TournamentsPage.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new TournamentsPage().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnClear;
+    private javax.swing.JButton btnCreateTournament;
+    private javax.swing.JButton btnHomeTab;
+    private javax.swing.JButton btnImportTournament;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLayeredPane lpnlTournamentPage;
+    private javax.swing.JScrollPane spnlTable;
+    private javax.swing.JTable tblTournaments;
+    // End of variables declaration//GEN-END:variables
+}
+
+package utils;
+
+/**
+ * Generates random numbers
+ * @author tshim
+ */
+public class Random {
+    
+    /**
+     * Generates a random integer
+     * @param start - minimum
+     * @param end - maximum
+     * @return the random integer
+     */
+    public static int getRandomInt(int start, int end){
+        return (int)(Math.random() * (end - start) + start);
+    }
+    
+    /**
+     * Generates a random double
+     * @param start - minimum
+     * @param end - maximum
+     * @return the generated double
+     */
+    public static double getRandomDouble(double start, double end){
+        double r = Double.parseDouble(String.format("%.2f", (Math.random() * (end - start) + start)));
+        
+        return r;
+    }
+}
+package utils;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+
+/**
+ * Validates user inputs
+ *
+ * @author tshim
+ */
+public class Validation {
+
+    //not needed to instantiate - all methods are static
+    private Validation() {
+    }
+
+    /**
+     * Checks if any of he fields are blank
+     * @param fields - hashmap, key: field name, value: the value to be checked
+     * @return a string of errors
+     */
+    public static String isValidStrings(HashMap<String, String> fields) {
+        StringBuilder errors = new StringBuilder("");
+
+        fields.forEach((key, value) -> {
+            if (value.isBlank()) {
+                errors.append(key).append(" is blank.\n");
+            }else if(value.length() > 35){
+                errors.append(key).append(" is more than 35 characters.\n");
+            }else if(value.length() < 5){
+                errors.append(key).append(" cannot be less than five characters.\n");
+            }
+        });
+
+        return errors.toString();
+    }
+    
+    /**
+     * 
+     * @param fields - the names and values of each input
+     * @param datatype - the datatype of the values
+     * 
+     * - ENSURE ALL VALUES ARE OF THE SAME EXPECTED DATATYPE
+     * - There cannot be a double in one field and an int in the other
+     * - Either all int or all double
+     * 
+     * @return the errors (if any)
+     */
+    public static String isValidNumbers(HashMap<String, String> fields, String datatype){
+        StringBuilder errors = new StringBuilder("");
+        
+        fields.forEach((key, value) -> {
+            
+            if(value.isBlank()){
+                errors.append(key).append(" cannot be blank");
+            }else switch(datatype.toLowerCase().trim()){
+                case "double": 
+                    try {
+                        double d = Double.parseDouble(value.trim());
+                        
+                        if(isNegative(d)){
+                            errors.append(key).append(" cannot be negative (less than 0).\n");
+                        }
+                        
+                        if(d > 2900){
+                            errors.append(key).append(" cannot be higher than 2900.\n");
+                        }
+                    } catch (NumberFormatException ex) {
+                        errors.append(key).append(" is not a valid double\n");
+                    }
+                    break;
+                case "int":
+                    try {
+                        int i = Integer.parseInt(value.trim());
+                        
+                        if(isNegative(i)){
+                            errors.append(key).append(" cannot be negative (less than 0).\n");
+                        }
+                        
+                        if(i > 2900){
+                            errors.append(key).append(" cannot be higher than 2900.\n");
+                        }
+                    } catch (NumberFormatException ex) {
+                        errors.append(key).append(" is not a valid double\n");
+                    }
+                    break;
+            }
+        });
+        
+        return errors.toString();
+        
+    }
+    
+    private static boolean isNegative(int i){
+        return i < 0;
+    }
+    
+    private static boolean isNegative(double d){
+        return d < 0;
+    }
+
+    /**
+     * Validates tournament start and end datetimes
+     * @param start 
+     * @param end
+     * @return a string of errors
+     */
+    public static String isDateGood(LocalDateTime start, LocalDateTime end) {
+        StringBuilder errors = new StringBuilder();
+
+        if (start == null) {
+            errors.append("Start time cannot be empty.\n");
+        }
+        if (end == null) {
+            errors.append("End time cannot be empty.\n");
+        }
+
+        if (start == null || end == null) {
+            return errors.toString();
+        }
+
+        if (start.isAfter(end)) {
+            errors.append("The start date cannot be after the end date.\n");
+        } else if (start.isEqual(end)) {
+            errors.append("The start and end date cannot be the exact same time.\n");
+        }
+
+        return errors.toString();
+    }
+}

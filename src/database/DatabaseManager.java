@@ -8,11 +8,10 @@ import java.util.logging.Logger;
 
 public class DatabaseManager {
 
-    private final static String dbName = "tournamentcontrol", url = String.format("jdbc:ucanaccess://%s\\%s.accdb", System.getProperty("user.dir"), dbName);
+    private final static String DB_NAME = "tournamentcontrol", URL = String.format("jdbc:ucanaccess://%s\\%s.accdb", System.getProperty("user.dir"), DB_NAME);
     private static Connection conn;
 
-    public DatabaseManager() {
-    }
+    public DatabaseManager() {}
 
     /**
      * Initialises the database
@@ -22,7 +21,7 @@ public class DatabaseManager {
         try {
 
             // System.out.printf("Connecting to database with url (%s)...\n", url);
-            conn = DriverManager.getConnection(url);
+            conn = DriverManager.getConnection(URL);
 
             if (isConnected()) {
                 System.out.println("Connected to database!");

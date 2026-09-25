@@ -5,6 +5,7 @@
 
 package games;
 
+import enums.GameResult;
 import net.datafaker.Faker;
 import players.Player;
 import tournaments.Tournament;
@@ -26,20 +27,40 @@ public class GameManager {
     public static Game generateGame(Player w, Player b, Tournament t, int round){ 
         String o = F.chess().opening();
         Game game = new Game(t, round, w, b, o);
-        System.out.println("Game: " + game);
         return game;
     }
     
-    /**
-     * Generates a game with players
-     * @param t
-     * @param round
-     * @return 
-     */
-    public static Game generateGameWithPlayers(Tournament t, int round){
-        Player w = Player.generatePlayer();
-        Player b = Player.generatePlayer();
-        return generateGame(w, b, t, round);
+    public static Game generateResult(Game g){
+        boolean hasEnded = g.hasEnded();
+        Player white = g.getWhite(), black = g.getBlack();
+        if (!hasEnded) {
+            String score;
+            double res = Math.random(), whiteCurrentPoints = white.getScore(),
+                    blackCurrentPoints = black.getScore(), wTB = white.getTieBreak(),
+                    bTB = black.getTieBreak();
+
+            if (res > 0.55) { // 45% chance to win-- white players first
+                score = "1-0"; // white wins
+                white.setScore(whiteCurrentPoints + 1);
+                white.setTieBreak(wTB + black.getRating());
+            } else if (res >= 0.35) {
+                score = "0.5-0.5"; // they game has been drawn
+                black.setScore(blackCurrentPoints + 0.5);
+                white.setScore(whiteCurrentPoints + 0.5);
+
+                black.setTieBreak(bTB + white.getRating() * 0.5);
+                white.setTieBreak(wTB + black.getRating() * 0.5);
+            } else {
+                score = "0-1"; // black wins
+                black.setScore(blackCurrentPoints + 1);
+                black.setTieBreak(bTB + white.getRating());
+            }
+
+            g.setResult(GameResult.getResultFromScore(score));
+            hasEnded = true;
+            return g;
+        } else {
+            return g;
+        }
     }
-    
 }

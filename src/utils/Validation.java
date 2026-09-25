@@ -19,12 +19,16 @@ public class Validation {
      * @param fields - hashmap, key: field name, value: the value to be checked
      * @return a string of errors
      */
-    public static String isAnyBlank(HashMap<String, String> fields) {
+    public static String isValidStrings(HashMap<String, String> fields) {
         StringBuilder errors = new StringBuilder("");
 
         fields.forEach((key, value) -> {
             if (value.isBlank()) {
                 errors.append(key).append(" is blank.\n");
+            }else if(value.length() > 35){
+                errors.append(key).append(" is more than 35 characters.\n");
+            }else if(value.length() < 5){
+                errors.append(key).append(" cannot be less than five characters.\n");
             }
         });
 
@@ -46,13 +50,20 @@ public class Validation {
         StringBuilder errors = new StringBuilder("");
         
         fields.forEach((key, value) -> {
-            switch(datatype.toLowerCase()){
+            
+            if(value.isBlank()){
+                errors.append(key).append(" cannot be blank");
+            }else switch(datatype.toLowerCase().trim()){
                 case "double": 
                     try {
                         double d = Double.parseDouble(value.trim());
                         
                         if(isNegative(d)){
-                            errors.append(key).append(" is negative (less than 0).\n");
+                            errors.append(key).append(" cannot be negative (less than 0).\n");
+                        }
+                        
+                        if(d > 2900){
+                            errors.append(key).append(" cannot be higher than 2900.\n");
                         }
                     } catch (NumberFormatException ex) {
                         errors.append(key).append(" is not a valid double\n");
@@ -63,10 +74,14 @@ public class Validation {
                         int i = Integer.parseInt(value.trim());
                         
                         if(isNegative(i)){
-                            errors.append(key).append(" is negative (less than 0).\n");
+                            errors.append(key).append(" cannot be negative (less than 0).\n");
+                        }
+                        
+                        if(i > 2900){
+                            errors.append(key).append(" cannot be higher than 2900.\n");
                         }
                     } catch (NumberFormatException ex) {
-                        errors.append(key).append(" is not a valid double\n");
+                        errors.append(key).append(" is not a valid integer.\n");
                     }
                     break;
             }

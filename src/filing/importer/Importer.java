@@ -1,5 +1,6 @@
 package filing.importer;
 
+import enums.TournamentType;
 import database.DatabaseManager;
 import java.io.File;
 import tournaments.*;
@@ -34,7 +35,7 @@ public class Importer {
 
     // keeps track of players in the tournament -- spcified in the id so that the can be added
     // as a player to the games
-    HashMap<String, Player> playersWithID = new HashMap<>();
+    private HashMap<String, Player> playersWithID = new HashMap<>();
 
     public Importer(File file) {
         this.file = file;

@@ -28,8 +28,8 @@ public class Config {
         FlatDarkLaf.setup();
 
         // 2. Global Typography
-        Font baseFont = new Font("Segoe UI", Font.PLAIN, 14);
-        Font boldFont = new Font("Segoe UI", Font.BOLD, 14);
+        Font baseFont = new Font("UD Digi Kyokasho NK", Font.PLAIN, 14);
+        Font boldFont = new Font("UD Digi Kyokasho NK", Font.BOLD, 14);
         UIManager.put("defaultFont", baseFont);
 
         // 3. Accent & Focus Glow (Emerald / Chess Green)
@@ -76,7 +76,6 @@ public class Config {
         Color cardSurface = new Color(0x25, 0x29, 0x3A); // Elevated panels & containers
         Color inputSurface = new Color(0x1E, 0x21, 0x30); // Input background
         Color accentEmerald = new Color(0x2E, 0xCC, 0x71); // Chess green accent
-        Color accentHover = new Color(0x38, 0xB0, 0x00); // Hover/Highlight green
         Color subtleBorder = new Color(0x36, 0x3B, 0x52); // Subtle separator lines
 
 // Window & Panel Backgrounds everywhere
@@ -106,8 +105,7 @@ public class Config {
     
     // frame settings
     private static final String PROJECT_NAME = "Tournament Control";
-    private static final int FRAME_WIDTH = 1338, FRAME_HEIGHT = 707,
-            X_COORD = 0, Y_COORD = 0;
+    private static final int FRAME_WIDTH = 1338, FRAME_HEIGHT = 707;
 
     // Tournament Control's Logo
     private static final ImageIcon ICON = new ImageIcon(Config.class.getResource("/images/TC_Logo.png"));

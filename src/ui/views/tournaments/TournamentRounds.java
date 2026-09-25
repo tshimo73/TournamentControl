@@ -200,8 +200,6 @@ public class TournamentRounds extends javax.swing.JFrame {
     private void initComponents() {
 
         lpnlTR = new javax.swing.JLayeredPane();
-        btnHomeTab = new javax.swing.JButton();
-        btnTournamentTab = new javax.swing.JButton();
         lblHeading = new javax.swing.JLabel();
         cBoxRound = new javax.swing.JComboBox<>();
         lblRoundHeading = new javax.swing.JLabel();
@@ -217,29 +215,8 @@ public class TournamentRounds extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        btnHomeTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
-        btnHomeTab.setText("Home");
-        btnHomeTab.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnHomeTabActionPerformed(evt);
-            }
-        });
-        lpnlTR.add(btnHomeTab);
-        btnHomeTab.setBounds(31, 29, 230, 40);
-
-        btnTournamentTab.setFont(new java.awt.Font("UD Digi Kyokasho NK", 1, 24)); // NOI18N
-        btnTournamentTab.setText("Tournaments");
-        btnTournamentTab.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnTournamentTabActionPerformed(evt);
-            }
-        });
-        lpnlTR.setLayer(btnTournamentTab, javax.swing.JLayeredPane.PALETTE_LAYER);
-        lpnlTR.add(btnTournamentTab);
-        btnTournamentTab.setBounds(1080, 30, 230, 40);
-
-        lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lpnlTR.add(lblHeading);
         lblHeading.setBounds(470, 30, 400, 40);
 
@@ -252,9 +229,9 @@ public class TournamentRounds extends javax.swing.JFrame {
         lpnlTR.add(cBoxRound);
         cBoxRound.setBounds(490, 110, 360, 30);
 
-        lblRoundHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
         lblRoundHeading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblRoundHeading.setText("Select Round.");
+        lblRoundHeading.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 14)); // NOI18N
         lpnlTR.add(lblRoundHeading);
         lblRoundHeading.setBounds(550, 80, 239, 30);
         lpnlTR.add(pBarRounds);
@@ -283,7 +260,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             }
         });
         lpnlTR.add(btnGenRound);
-        btnGenRound.setBounds(1080, 110, 210, 31);
+        btnGenRound.setBounds(1100, 40, 210, 31);
 
         btnSeeFinal.setText("See Final Stats");
         btnSeeFinal.addActionListener(new java.awt.event.ActionListener() {
@@ -292,7 +269,7 @@ public class TournamentRounds extends javax.swing.JFrame {
             }
         });
         lpnlTR.add(btnSeeFinal);
-        btnSeeFinal.setBounds(1080, 150, 210, 30);
+        btnSeeFinal.setBounds(1100, 80, 210, 30);
 
         lblRoundCompletion.setFont(new java.awt.Font("UD Digi Kyokasho NP", 1, 18)); // NOI18N
         lblRoundCompletion.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -357,16 +334,6 @@ public class TournamentRounds extends javax.swing.JFrame {
         setLeaderBoard(Integer.parseInt(cBoxRound.getSelectedItem().toString()));
     }//GEN-LAST:event_cBoxRoundActionPerformed
 
-    private void btnTournamentTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTournamentTabActionPerformed
-        this.dispose();
-        new ui.TournamentsPage().setVisible(true);
-    }//GEN-LAST:event_btnTournamentTabActionPerformed
-
-    private void btnHomeTabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeTabActionPerformed
-        this.dispose();
-        new ui.Main().setVisible(true);
-    }//GEN-LAST:event_btnHomeTabActionPerformed
-
     /**
      * @param args the command line arguments
      */
@@ -404,9 +371,7 @@ public class TournamentRounds extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGenRound;
-    private javax.swing.JButton btnHomeTab;
     private javax.swing.JButton btnSeeFinal;
-    private javax.swing.JButton btnTournamentTab;
     private javax.swing.JComboBox<String> cBoxRound;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

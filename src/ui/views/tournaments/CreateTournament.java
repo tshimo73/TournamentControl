@@ -1,5 +1,6 @@
 package ui.views.tournaments;
 
+import enums.TournamentType;
 import entities.TournamentEntity;
 import enums.Federation;
 import java.time.LocalDateTime;
@@ -51,12 +52,12 @@ public class CreateTournament extends javax.swing.JFrame {
     // returns the errors (if any) for the fields
     private String checkStringFields() {
         HashMap<String, String> fields = new HashMap<>();
-        fields.put("Tournament Name", txfName.getText());
-        fields.put("Director", txfDirector.getText());
-        fields.put("Chief Arbiter", txfCA.getText());
-        fields.put("Chief Deputy Arbiter", txfDCA.getText());
+        fields.put("Tournament Name", txfName.getText().trim());
+        fields.put("Director", txfDirector.getText().trim());
+        fields.put("Chief Arbiter", txfCA.getText().trim());
+        fields.put("Chief Deputy Arbiter", txfDCA.getText().trim());
 
-        return Validation.isAnyBlank(fields);
+        return Validation.isValidStrings(fields);
     }
 
     // returns the errors (if any) for the fields
@@ -282,7 +283,7 @@ public class CreateTournament extends javax.swing.JFrame {
         lpnlCT.add(lblNumRounds);
         lblNumRounds.setBounds(660, 440, 210, 30);
 
-        btnGenDsAndTs.setText("Generate Start and End DateTime");
+        btnGenDsAndTs.setText("Generate Start and End Dates");
         btnGenDsAndTs.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnGenDsAndTsActionPerformed(evt);
@@ -291,10 +292,9 @@ public class CreateTournament extends javax.swing.JFrame {
         lpnlCT.add(btnGenDsAndTs);
         btnGenDsAndTs.setBounds(680, 530, 290, 40);
 
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("You can either generate the values or enter in your own!");
         lpnlCT.add(jLabel1);
-        jLabel1.setBounds(290, 110, 350, 30);
+        jLabel1.setBounds(290, 110, 420, 30);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -398,7 +398,6 @@ public class CreateTournament extends javax.swing.JFrame {
 
             TournamentEntity te = new TournamentEntity();
             if (te.insert(t)) {
-
                 this.dispose();
                 new ConfigureTournament(id).setVisible(true);
             } else {

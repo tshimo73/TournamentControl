@@ -1,4 +1,4 @@
-package tournaments;
+package enums;
 
 import utils.Random;
 

@@ -1,16 +1,12 @@
 
 package tournaments;
 
+import enums.TournamentType;
 import java.time.LocalDateTime;
 import java.util.Map;
-import net.datafaker.Faker;
-import net.datafaker.providers.sport.Chess;
 import utils.Random;
 
 public class TournamentManager {
-
-    private static final Faker F = new Faker();
-    private static final Chess C = F.chess();
 
     // made with claude
     private static final int MAX_DAYS_UNTIL_START = 180;
@@ -20,7 +16,8 @@ public class TournamentManager {
             TournamentType.RAPID, new int[]{1, 3},
             TournamentType.BLITZ, new int[]{1, 2},
             TournamentType.CLASSICAL, new int[]{7, 14},
-            TournamentType.BULLET, new int[]{1, 1}
+            TournamentType.BULLET, new int[]{1, 1},
+            TournamentType.HYPERBULLET, new int[]{1, 1}
     );
 
     // made with claude and me

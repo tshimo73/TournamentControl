@@ -1,27 +1,23 @@
 
 package tournaments;
 
+import enums.TournamentType;
 import entities.TournamentEntity;
 import java.time.LocalDateTime;
 import players.Player;
 import games.Game;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import matchmaking.MatchMaker;
 
 public class Tournament {
 
-    protected final TournamentEntity te = new TournamentEntity();
-    protected String name, federation, director, chiefArbiter, deputyChiefArbiter, id;
-    protected TournamentType tournamentType;
-    protected LocalDateTime startDate, endDate;
-    protected int rounds;
-    protected List<Player> players = new ArrayList<>();
-    protected List<Game> games = new ArrayList<>();
-    protected boolean isImported = false, hasEnded = false;
+    private String name, federation, director, chiefArbiter, deputyChiefArbiter, id;
+    private TournamentType tournamentType;
+    private LocalDateTime startDate, endDate;
+    private int rounds;
+    private List<Player> players = new ArrayList<>();
+    private List<Game> games = new ArrayList<>();
+    private boolean isImported = false, hasEnded = false;
 
 
     /**
@@ -75,21 +71,6 @@ public class Tournament {
     }
 
     public Tournament() {
-    }
-
-    public void simulateGames(int rounds) {
-        if (players.isEmpty()) {
-            System.exit(0);
-        }
-
-        MatchMaker mm = new MatchMaker(players, 1);
-
-        for (int i = 0; i < rounds; i++) {
-
-            mm.setRound(i + 1);
-            List<Game> matches = mm.generateRound(this);
-            games.addAll(matches);
-        }
     }
 
     

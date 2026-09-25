@@ -243,7 +243,14 @@ abstract class Entity<T> { // abstract so this class cannot be instantiated, onl
                 HashMap<String, Object> row = new HashMap<>();
                 ResultSetMetaData meta = rs.getMetaData();
                 for (int i = 1; i <= meta.getColumnCount(); i++) {
-                    row.put(meta.getColumnName(i), rs.getObject(i));
+                    // in the case of derived or custom labelled fields
+                    // found that with getColumnName() query made fields 
+                    // returned null
+                    String colName = meta.getColumnLabel(i);
+                    if (colName == null || colName.isBlank()) {
+                        colName = meta.getColumnName(i);
+                    }
+                    row.put(colName, rs.getObject(i));
                 }
 
                 rowsOfResults.add(row);
@@ -269,9 +276,9 @@ abstract class Entity<T> { // abstract so this class cannot be instantiated, onl
 
             if (affected > 0) {
                 System.out.println("Successfully deleted all records from " + table);
-            } else if(affected == 0) {
+            } else if (affected == 0) {
                 System.out.println("No records deleted from " + table);
-            }else {
+            } else {
                 System.out.println("Failed to delete all records from " + table);
             }
         } catch (SQLException ex) {
